@@ -17,6 +17,10 @@ mod derive;
 pub use arithmetic::CurveAffineExt;
 pub use pasta_curves::arithmetic::{Coordinates, CurveAffine, CurveExt};
 
+#[cfg(test)]
+#[macro_use]
+extern crate std;
+
 // Re-export ff and group to simplify down stream dependencies
 #[cfg(feature = "reexport")]
 pub use ff;
