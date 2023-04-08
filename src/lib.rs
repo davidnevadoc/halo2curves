@@ -11,6 +11,7 @@ pub mod serde;
 #[macro_use]
 mod derive;
 pub use arithmetic::CurveAffineExt;
+pub use arithmetic::CurveEndo;
 pub use pasta_curves::arithmetic::{Coordinates, CurveAffine, CurveExt};
 
 // Re-export ff and group to simplify down stream dependencies
