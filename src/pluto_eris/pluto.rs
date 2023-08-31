@@ -1,3 +1,4 @@
+use crate::arithmetic::EndoParameters;
 use crate::ff::WithSmallOrderMulGroup;
 use crate::ff::{Field, PrimeField};
 use crate::group::{prime::PrimeCurveAffine, Curve, Group as _, GroupEncoding};
@@ -76,6 +77,56 @@ impl Pluto {
     const SVDW_Z: Fq = Fq::ONE;
 }
 
+//TODO Update comment
+// Generated using https://github.com/ConsenSys/gnark-crypto/blob/master/ecc/utils.go
+// with `Fp::ZETA`
+// See https://github.com/demining/Endomorphism-Secp256k1/blob/main/README.md
+// to have more details about the endomorphism.
+
+const ENDO_PARAMS_PLUTO: EndoParameters = EndoParameters {
+    // gamma1: 0x2aaaaaaaaaaa955554a0aaaab2aae415b8e5c9500df52222a6a19d565
+    gamma1: [
+        0xdf52222a6a19d565,
+        0x2aae415b8e5c9500,
+        0xaaa955554a0aaaab,
+        0x00000002aaaaaaaa,
+        0x0000000000000000,
+        0x0000000000000000,
+        0x0000000000000000,
+    ],
+    // gamma2: 0x38e38e38e38e0e38e224e38e4e39d
+    gamma2: [
+        0xe38e224e38e4e39d,
+        0x00038e38e38e38e0,
+        0x0000000000000000,
+        0x0000000000000000,
+        0x0000000000000000,
+        0x0000000000000000,
+        0x0000000000000000,
+    ],
+    // b1: 0x60000000000030000196800005ff0065a001ae513ffffde200000001
+    b1: [
+        0x3ffffde200000001,
+        0x05ff0065a001ae51,
+        0x0000300001968000,
+        0x0000000060000000,
+        0x0000000000000000,
+        0x0000000000000000,
+        0x0000000000000000,
+    ],
+    // b2: 0x8000000000002000010f00000000
+    b2: [
+        0x2000010f00000000,
+        0x0000800000000000,
+        0x0000000000000000,
+        0x0000000000000000,
+        0x0000000000000000,
+        0x0000000000000000,
+        0x0000000000000000,
+    ],
+};
+
+endo7!(Pluto, Fp, ENDO_PARAMS_PLUTO);
 #[test]
 fn test_curve() {
     crate::tests::curve::curve_tests::<Pluto>();
