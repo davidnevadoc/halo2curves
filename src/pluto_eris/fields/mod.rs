@@ -1,5 +1,6 @@
 pub mod fp;
 pub mod fq;
+pub mod fq2;
 
 #[macro_export]
 macro_rules! impl_from_u64_7_limbs {
