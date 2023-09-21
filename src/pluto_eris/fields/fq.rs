@@ -49,7 +49,9 @@ const MODULUS_LIMBS_32: [u32; 14] = [
     0xf439266f, 0xa803ca76, 0x0d7f70e4, 0x0130e000, 0x00002400, 0x24000000,
 ];
 
-const MODULUS_STR: &str = "0x24000000000024000130e0000d7f70e4a803ca76f439266f443f9a5cda8a6c7be4a7a5fe8fadffd6a2a7e8c30006b9459ffffcd300000001";
+// pub const NEGATIVE_ONE: Fq = Fq([]);
+
+pub(crate) const MODULUS_STR: &str = "0x24000000000024000130e0000d7f70e4a803ca76f439266f443f9a5cda8a6c7be4a7a5fe8fadffd6a2a7e8c30006b9459ffffcd300000001";
 
 /// INV = -r^{-1} mod 2^64
 /// `0x9ffffcd2ffffffff`
@@ -127,7 +129,7 @@ const ROOT_OF_UNITY_INV: Fq = Fq::from_raw([
 
 /// 1 / 2 mod q
 /// `0x12000000000012000098700006bfb8725401e53b7a1c9337a21fcd2e6d45363df253d2ff47d6ffeb5153f46180035ca2cffffe6980000001`
-const TWO_INV: Fq = Fq::from_raw([
+pub(crate) const TWO_INV: Fq = Fq::from_raw([
     0xcffffe6980000001,
     0x5153f46180035ca2,
     0xf253d2ff47d6ffeb,
@@ -150,7 +152,6 @@ const DELTA: Fq = Fq::from_raw([
 
 /// `ZETA^3 = 1 mod q` where `ZETA^2 != 1 mod q`
 /// `0x480000000000360001c950000d7ee0e4a803c956d01c903d720dc8ad8b38dffaf50c100004c37ffffffe`
-
 const ZETA: Fq = Fq::from_raw([
     0x100004c37ffffffe,
     0xc8ad8b38dffaf50c,

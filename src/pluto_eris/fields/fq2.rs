@@ -332,62 +332,63 @@ impl Field for Fq2 {
         self.double()
     }
 
-    // TODO Review algorithm and constants
+    // TODO Review algorithm and constants. Likely need to switch to Algorithm 8
     fn sqrt(&self) -> CtOption<Self> {
+        unimplemented!()
         // Algorithm 9, https://eprint.iacr.org/2012/685.pdf
 
-        if self.is_zero().into() {
-            CtOption::new(Self::ZERO, Choice::from(1))
-        } else {
-            // a1 = self^((q - 3) / 4)
-            // 0xc19139cb84c680a6e14116da060561765e05aa45a1c72a34f082305b61f3f51
-            let u: [u64; 4] = [
-                0x4f082305b61f3f51,
-                0x65e05aa45a1c72a3,
-                0x6e14116da0605617,
-                0x0c19139cb84c680a,
-            ];
-            let mut a1 = self.pow(&u);
-            let mut alpha = a1;
+        // if self.is_zero().into() {
+        //     CtOption::new(Self::ZERO, Choice::from(1))
+        // } else {
+        //     // a1 = self^((q - 3) / 4)
+        //     // 0xc19139cb84c680a6e14116da060561765e05aa45a1c72a34f082305b61f3f51
+        //     let u: [u64; 4] = [
+        //         0x4f082305b61f3f51,
+        //         0x65e05aa45a1c72a3,
+        //         0x6e14116da0605617,
+        //         0x0c19139cb84c680a,
+        //     ];
+        //     let mut a1 = self.pow(&u);
+        //     let mut alpha = a1;
 
-            alpha.square_assign();
-            alpha.mul_assign(self);
-            let mut a0 = alpha;
-            a0.frobenius_map(1);
-            a0.mul_assign(&alpha);
+        //     alpha.square_assign();
+        //     alpha.mul_assign(self);
+        //     let mut a0 = alpha;
+        //     a0.frobenius_map(1);
+        //     a0.mul_assign(&alpha);
 
-            let neg1 = Fq2 {
-                // c0: NEGATIVE_ONE,
-                c0: -Fq::one(),
-                c1: Fq::zero(),
-            };
+        //     let neg1 = Fq2 {
+        //         // c0: NEGATIVE_ONE,
+        //         c0: -Fq::one(),
+        //         c1: Fq::zero(),
+        //     };
 
-            if a0 == neg1 {
-                CtOption::new(a0, Choice::from(0))
-            } else {
-                a1.mul_assign(self);
+        //     if a0 == neg1 {
+        //         CtOption::new(a0, Choice::from(0))
+        //     } else {
+        //         a1.mul_assign(self);
 
-                if alpha == neg1 {
-                    a1.mul_assign(&Fq2 {
-                        c0: Fq::zero(),
-                        c1: Fq::one(),
-                    });
-                } else {
-                    alpha += &Fq2::ONE;
-                    // alpha = alpha^((q - 1) / 2)
-                    // 0x183227397098d014dc2822db40c0ac2ecbc0b548b438e5469e10460b6c3e7ea3
-                    let u: [u64; 4] = [
-                        0x9e10460b6c3e7ea3,
-                        0xcbc0b548b438e546,
-                        0xdc2822db40c0ac2e,
-                        0x183227397098d014,
-                    ];
-                    alpha = alpha.pow(&u);
-                    a1.mul_assign(&alpha);
-                }
-                CtOption::new(a1, Choice::from(1))
-            }
-        }
+        //         if alpha == neg1 {
+        //             a1.mul_assign(&Fq2 {
+        //                 c0: Fq::zero(),
+        //                 c1: Fq::one(),
+        //             });
+        //         } else {
+        //             alpha += &Fq2::ONE;
+        //             // alpha = alpha^((q - 1) / 2)
+        //             // 0x183227397098d014dc2822db40c0ac2ecbc0b548b438e5469e10460b6c3e7ea3
+        //             let u: [u64; 4] = [
+        //                 0x9e10460b6c3e7ea3,
+        //                 0xcbc0b548b438e546,
+        //                 0xdc2822db40c0ac2e,
+        //                 0x183227397098d014,
+        //             ];
+        //             alpha = alpha.pow(&u);
+        //             a1.mul_assign(&alpha);
+        //         }
+        //         CtOption::new(a1, Choice::from(1))
+        //     }
+        // }
     }
 
     fn sqrt_ratio(num: &Self, div: &Self) -> (Choice, Self) {
@@ -725,7 +726,7 @@ fn test_frobenius() {
             let mut b = a;
 
             for _ in 0..i {
-                a = a.pow(&[
+                a = a.pow_vartime(&[
                     0x9ffffcd300000001,
                     0xa2a7e8c30006b945,
                     0xe4a7a5fe8fadffd6,
