@@ -1,7 +1,8 @@
 use crate::ff::WithSmallOrderMulGroup;
 use crate::ff::{Field, PrimeField};
 use crate::group::{prime::PrimeCurveAffine, Curve, Group as _, GroupEncoding};
-use crate::pluto_eris::fields::{fp::Fp, fq::Fq};
+use crate::pluto_eris::fields::fp::Fp;
+use crate::pluto_eris::fields::fq::Fq;
 use crate::{Coordinates, CurveAffine, CurveExt};
 use core::cmp;
 use core::fmt::Debug;
@@ -106,7 +107,7 @@ impl group::cofactor::CofactorGroup for Triton {
     }
 
     fn is_torsion_free(&self) -> Choice {
-        //
+        // group order = p
         let e: [u8; 56] = [
             0x24, 0x00, 0x00, 0x00, 0x00, 0x00, 0x24, 0x00, 0x01, 0x30, 0xe0, 0x00, 0x0d, 0x7f,
             0x70, 0xe4, 0xa8, 0x03, 0xca, 0x76, 0xf4, 0x39, 0x26, 0x6f, 0x44, 0x3f, 0x9a, 0x5c,

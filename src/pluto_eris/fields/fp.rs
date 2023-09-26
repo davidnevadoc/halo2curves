@@ -2,6 +2,7 @@ use crate::arithmetic::{adc, mac, sbb};
 use crate::ff::{FromUniformBytes, PrimeField, WithSmallOrderMulGroup};
 use crate::{
     field_arithmetic_7_limbs, field_bits_7_limbs, field_common_7_limbs, impl_from_u64_7_limbs,
+    prime_field_legendre,
 };
 use crate::{
     impl_add_binop_specify_output, impl_binops_additive, impl_binops_additive_specify_output,
@@ -152,8 +153,8 @@ const DELTA: Fp = Fp::from_raw([
     0x657946fe07116ce,
 ]);
 
-/// `ZETA^3 = 1 mod p` where `ZETA^2 != 1 mod p`
-/// `0x9000000000006c000392a0001afee1c9500792ae3039253e641ba35817a29ffaf50be000032cfffffffe`
+// /// `ZETA^3 = 1 mod p` where `ZETA^2 != 1 mod p`
+// /// `0x9000000000006c000392a0001afee1c9500792ae3039253e641ba35817a29ffaf50be000032cfffffffe`
 
 const ZETA: Fp = Fp::from_raw([
     0xe000032cfffffffe,
@@ -164,6 +165,18 @@ const ZETA: Fp = Fp::from_raw([
     0x0000000000009000,
     0x0000000000000000,
 ]);
+
+// ZETA**2
+// 0x24000000000024000130e0000d7ee0e4a803ca76883922dca43f7f5d98c11c7451f945c568d91bbaf94fd0bac00a15e83ffff9a600000002
+// const ZETA_2: Fp = Fp::from_raw([
+//     0x3ffff9a600000002,
+//     0xf94fd0bac00a15e8,
+//     0x51f945c568d91bba,
+//     0xa43f7f5d98c11c74,
+//     0xa803ca76883922dc,
+//     0x0130e0000d7ee0e4,
+//     0x2400000000002400,
+// ]);
 
 impl_binops_additive!(Fp, Fp);
 impl_binops_multiplicative!(Fp, Fp);
@@ -189,6 +202,8 @@ field_arithmetic_7_limbs!(Fp, MODULUS, INV, sparse);
 field_bits_7_limbs!(Fp, MODULUS);
 #[cfg(not(target_pointer_width = "64"))]
 field_bits_7_limbs!(Fp, MODULUS, MODULUS_LIMBS_32);
+
+prime_field_legendre!(Fp);
 
 impl Fp {
     pub const fn size() -> usize {

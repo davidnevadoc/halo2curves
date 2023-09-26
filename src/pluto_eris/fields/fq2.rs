@@ -1,9 +1,11 @@
 use super::fq::{Fq, MODULUS_STR};
 use crate::ff::{Field, FromUniformBytes, PrimeField, WithSmallOrderMulGroup};
+use crate::legendre::Legendre;
 use core::convert::TryInto;
 use core::ops::{Add, Mul, Neg, Sub};
 use rand::RngCore;
 use std::cmp::Ordering;
+use std::ops::MulAssign;
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
 
 #[cfg(feature = "derive_serde")]
@@ -24,6 +26,11 @@ const U_SQUARE: Fq = Fq::from_raw([
     0x0130e0000d7f70e4,
     0x2400000000002400,
 ]);
+
+const NEG_ONE: Fq2 = Fq2 {
+    c0: super::fq::NEG_ONE,
+    c1: Fq::ZERO,
+};
 
 /// An element of Fq2, represented by c0 + c1 * u.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -309,6 +316,21 @@ impl Fq2 {
     }
 }
 
+impl Legendre for Fq2 {
+    type BasePrimeField = Fq;
+    fn legendre_exp() -> &'static [u64] {
+        Self::BasePrimeField::legendre_exp()
+    }
+
+    /// Norm of Fq2 as extension field in u over Fq
+    fn norm(&self) -> Self::BasePrimeField {
+        // norm = self * self.cojungate()
+        let t0 = self.c0.square();
+        let t1 = self.c1.square() * U_SQUARE;
+        t1 - t0
+    }
+}
+
 impl Field for Fq2 {
     const ZERO: Self = Self::zero();
     const ONE: Self = Self::one();
@@ -332,64 +354,124 @@ impl Field for Fq2 {
         self.double()
     }
 
-    // TODO Review algorithm and constants. Likely need to switch to Algorithm 8
     fn sqrt(&self) -> CtOption<Self> {
-        unimplemented!()
-        // Algorithm 9, https://eprint.iacr.org/2012/685.pdf
+        // Algorithm 10, https://eprint.iacr.org/2012/685.pdf
 
-        // if self.is_zero().into() {
-        //     CtOption::new(Self::ZERO, Choice::from(1))
-        // } else {
-        //     // a1 = self^((q - 3) / 4)
-        //     // 0xc19139cb84c680a6e14116da060561765e05aa45a1c72a34f082305b61f3f51
-        //     let u: [u64; 4] = [
-        //         0x4f082305b61f3f51,
-        //         0x65e05aa45a1c72a3,
-        //         0x6e14116da0605617,
-        //         0x0c19139cb84c680a,
-        //     ];
-        //     let mut a1 = self.pow(&u);
-        //     let mut alpha = a1;
+        // Constants and aux variables
 
-        //     alpha.square_assign();
-        //     alpha.mul_assign(self);
-        //     let mut a0 = alpha;
-        //     a0.frobenius_map(1);
-        //     a0.mul_assign(&alpha);
+        // Aux elements. Described in PRECOMPUTATION of Algorithm 10.
+        // As element of Fq2: E = 0 +  U *
+        // 0x13e275a1fa6a13af7a82a3d83bc9e63a667c70cf991a36e603b21f15823a404a021848271d63f0875d232408689b4c6c67153f9701e19938
+        const E: Fq2 = Fq2 {
+            c0: Fq::ZERO,
+            c1: Fq::from_raw([
+                0x67153f9701e19938,
+                0x5d232408689b4c6c,
+                0x021848271d63f087,
+                0x03b21f15823a404a,
+                0x667c70cf991a36e6,
+                0x7a82a3d83bc9e63a,
+                0x13e275a1fa6a13af,
+            ]),
+        };
 
-        //     let neg1 = Fq2 {
-        //         // c0: NEGATIVE_ONE,
-        //         c0: -Fq::one(),
-        //         c1: Fq::zero(),
-        //     };
+        // As element of Fq2: f = 5 + 0 * U
+        // 0x5
+        const F: Fq2 = Fq2 {
+            c0: Fq::from_raw([0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
+            c1: Fq::ZERO,
+        };
 
-        //     if a0 == neg1 {
-        //         CtOption::new(a0, Choice::from(0))
-        //     } else {
-        //         a1.mul_assign(self);
+        // Algorithm (not constant time)
+        let b = self.pow_vartime(&[
+            // (q-1)/4 =
+            // 0x900000000000900004c3800035fdc392a00f29dbd0e499bd10fe69736a29b1ef929e97fa3eb7ff5a8a9fa30c001ae5167ffff34c0000000
+            0x67ffff34c0000000,
+            0xa8a9fa30c001ae51,
+            0xf929e97fa3eb7ff5,
+            0xd10fe69736a29b1e,
+            0x2a00f29dbd0e499b,
+            0x004c3800035fdc39,
+            0x0900000000000900,
+        ]);
 
-        //         if alpha == neg1 {
-        //             a1.mul_assign(&Fq2 {
-        //                 c0: Fq::zero(),
-        //                 c1: Fq::one(),
-        //             });
-        //         } else {
-        //             alpha += &Fq2::ONE;
-        //             // alpha = alpha^((q - 1) / 2)
-        //             // 0x183227397098d014dc2822db40c0ac2ecbc0b548b438e5469e10460b6c3e7ea3
-        //             let u: [u64; 4] = [
-        //                 0x9e10460b6c3e7ea3,
-        //                 0xcbc0b548b438e546,
-        //                 0xdc2822db40c0ac2e,
-        //                 0x183227397098d014,
-        //             ];
-        //             alpha = alpha.pow(&u);
-        //             a1.mul_assign(&alpha);
-        //         }
-        //         CtOption::new(a1, Choice::from(1))
-        //     }
-        // }
+        let b_2 = b.square();
+        let mut b_2_q = b_2.clone();
+        b_2_q.frobenius_map(1);
+
+        let a0 = b_2_q * b_2;
+        if a0 == NEG_ONE {
+            CtOption::new(a0, Choice::from(0))
+        } else {
+            let mut x = b.clone();
+            x.frobenius_map(1);
+            if x * b == Fq2::ONE {
+                let x0 = (b_2 * self).c0.sqrt().unwrap();
+                x.c0.mul_assign(x0);
+                x.c1.mul_assign(x0);
+                CtOption::new(x, Choice::from(1))
+            } else {
+                let x0 = (self * b_2 * F).sqrt().unwrap();
+                x *= x0 * E;
+                CtOption::new(x, Choice::from(1))
+            }
+        }
     }
+
+    // Algorithm 9, https://eprint.iacr.org/2012/685.pdf
+
+    // if self.is_zero().into() {
+    //     CtOption::new(Self::ZERO, Choice::from(1))
+    // } else {
+    //     // a1 = self^((q - 3) / 4)
+    //     // 0xc19139cb84c680a6e14116da060561765e05aa45a1c72a34f082305b61f3f51
+    //     let u: [u64; 4] = [
+    //         0x4f082305b61f3f51,
+    //         0x65e05aa45a1c72a3,
+    //         0x6e14116da0605617,
+    //         0x0c19139cb84c680a,
+    //     ];
+    //     let mut a1 = self.pow(&u);
+    //     let mut alpha = a1;
+
+    //     alpha.square_assign();
+    //     alpha.mul_assign(self);
+    //     let mut a0 = alpha;
+    //     a0.frobenius_map(1);
+    //     a0.mul_assign(&alpha);
+
+    //     let neg1 = Fq2 {
+    //         // c0: NEGATIVE_ONE,
+    //         c0: -Fq::one(),
+    //         c1: Fq::zero(),
+    //     };
+
+    //     if a0 == neg1 {
+    //         CtOption::new(a0, Choice::from(0))
+    //     } else {
+    //         a1.mul_assign(self);
+
+    //         if alpha == neg1 {
+    //             a1.mul_assign(&Fq2 {
+    //                 c0: Fq::zero(),
+    //                 c1: Fq::one(),
+    //             });
+    //         } else {
+    //             alpha += &Fq2::ONE;
+    //             // alpha = alpha^((q - 1) / 2)
+    //             // 0x183227397098d014dc2822db40c0ac2ecbc0b548b438e5469e10460b6c3e7ea3
+    //             let u: [u64; 4] = [
+    //                 0x9e10460b6c3e7ea3,
+    //                 0xcbc0b548b438e546,
+    //                 0xdc2822db40c0ac2e,
+    //                 0x183227397098d014,
+    //             ];
+    //             alpha = alpha.pow(&u);
+    //             a1.mul_assign(&alpha);
+    //         }
+    //         CtOption::new(a1, Choice::from(1))
+    //     }
+    // }
 
     fn sqrt_ratio(num: &Self, div: &Self) -> (Choice, Self) {
         ff::helpers::sqrt_ratio_generic(num, div)
@@ -524,9 +606,17 @@ impl crate::serde::SerdeObject for Fq2 {
 }
 
 impl WithSmallOrderMulGroup<3> for Fq2 {
-    /// `0x480000000000360001c950000d7ee0e4a803c956d01c903d720dc8ad8b38dffaf50c100004c37ffffffe`
     const ZETA: Self = Fq2 {
-        c0: Fq::ZETA,
+        // 0x24000000000024000130e0000d7f28e4a803ca76be3924a5f43f8cddf9a5c4781b50d5e1ff708dc8d9fa5d8a200bc4398ffff80f80000002
+        c0: Fq::from_raw([
+            0x8ffff80f80000002,
+            0xd9fa5d8a200bc439,
+            0x1b50d5e1ff708dc8,
+            0xf43f8cddf9a5c478,
+            0xa803ca76be3924a5,
+            0x0130e0000d7f28e4,
+            0x2400000000002400,
+        ]),
         c1: Fq::zero(),
     };
 }
@@ -657,61 +747,50 @@ fn test_fq2_mul_nonresidue() {
     }
 }
 
-// #[test]
-// fn test_fq2_legendre() {
-//     assert_eq!(LegendreSymbol::Zero, Fq2::ZERO.legendre());
-//     // i^2 = -1
-//     let mut m1 = Fq2::ONE;
-//     m1 = m1.neg();
-//     assert_eq!(LegendreSymbol::QuadraticResidue, m1.legendre());
-//     m1.mul_by_nonresidue();
-//     assert_eq!(LegendreSymbol::QuadraticNonResidue, m1.legendre());
-// }
+#[test]
+pub fn test_sqrt() {
+    let mut rng = XorShiftRng::from_seed([
+        0x59, 0x62, 0xbe, 0x5d, 0x76, 0x3d, 0x31, 0x8d, 0x17, 0xdb, 0x37, 0x32, 0x54, 0x06, 0xbc,
+        0xe5,
+    ]);
+    const N_ITER: usize = 1000;
+    for _ in 0..N_ITER {
+        let a = Fq2::random(&mut rng);
+        if a.legendre() == -Fq::ONE {
+            assert!(bool::from(a.sqrt().is_none()));
+        }
+    }
 
-// #[test]
-// pub fn test_sqrt() {
-//     let mut rng = XorShiftRng::from_seed([
-//         0x59, 0x62, 0xbe, 0x5d, 0x76, 0x3d, 0x31, 0x8d, 0x17, 0xdb, 0x37, 0x32, 0x54, 0x06, 0xbc,
-//         0xe5,
-//     ]);
+    for _ in 0..N_ITER {
+        let a = Fq2::random(&mut rng);
+        let mut b = a;
+        b.square_assign();
+        assert_eq!(b.legendre(), Fq::ONE);
 
-//     for _ in 0..10000 {
-//         let a = Fq2::random(&mut rng);
-//         if a.legendre() == LegendreSymbol::QuadraticNonResidue {
-//             assert!(bool::from(a.sqrt().is_none()));
-//         }
-//     }
+        let b = b.sqrt().unwrap();
+        let mut negb = b;
+        negb = negb.neg();
 
-//     for _ in 0..10000 {
-//         let a = Fq2::random(&mut rng);
-//         let mut b = a;
-//         b.square_assign();
-//         assert_eq!(b.legendre(), LegendreSymbol::QuadraticResidue);
+        assert!(a == b || a == negb);
+    }
 
-//         let b = b.sqrt().unwrap();
-//         let mut negb = b;
-//         negb = negb.neg();
+    let mut c = Fq2::ONE;
+    for _ in 0..N_ITER {
+        let mut b = c;
+        b.square_assign();
+        assert_eq!(b.legendre(), Fq::ONE);
 
-//         assert!(a == b || a == negb);
-//     }
+        b = b.sqrt().unwrap();
 
-//     let mut c = Fq2::ONE;
-//     for _ in 0..10000 {
-//         let mut b = c;
-//         b.square_assign();
-//         assert_eq!(b.legendre(), LegendreSymbol::QuadraticResidue);
+        if b != c {
+            b = b.neg();
+        }
 
-//         b = b.sqrt().unwrap();
+        assert_eq!(b, c);
 
-//         if b != c {
-//             b = b.neg();
-//         }
-
-//         assert_eq!(b, c);
-
-//         c += &Fq2::ONE;
-//     }
-// }
+        c += &Fq2::ONE;
+    }
+}
 
 #[test]
 fn test_frobenius() {

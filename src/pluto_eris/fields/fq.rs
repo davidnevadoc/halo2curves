@@ -2,6 +2,7 @@ use crate::arithmetic::{adc, mac, sbb};
 use crate::ff::{FromUniformBytes, PrimeField, WithSmallOrderMulGroup};
 use crate::{
     field_arithmetic_7_limbs, field_bits_7_limbs, field_common_7_limbs, impl_from_u64_7_limbs,
+    prime_field_legendre,
 };
 use crate::{
     impl_add_binop_specify_output, impl_binops_additive, impl_binops_additive_specify_output,
@@ -162,6 +163,17 @@ const ZETA: Fq = Fq::from_raw([
     0x0000000000000000,
 ]);
 
+/// NEG_ONE ; -1 mod q
+pub(crate) const NEG_ONE: Fq = Fq::from_raw([
+    0x9ffffcd300000000,
+    0xa2a7e8c30006b945,
+    0xe4a7a5fe8fadffd6,
+    0x443f9a5cda8a6c7b,
+    0xa803ca76f439266f,
+    0x0130e0000d7f70e4,
+    0x2400000000002400,
+]);
+
 impl_binops_additive!(Fq, Fq);
 impl_binops_multiplicative!(Fq, Fq);
 field_common_7_limbs!(
@@ -186,6 +198,8 @@ field_arithmetic_7_limbs!(Fq, MODULUS, INV, sparse);
 field_bits_7_limbs!(Fq, MODULUS);
 #[cfg(not(target_pointer_width = "64"))]
 field_bits_7_limbs!(Fq, MODULUS, MODULUS_LIMBS_32);
+
+prime_field_legendre!(Fq);
 
 impl Fq {
     pub const fn size() -> usize {
