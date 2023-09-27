@@ -31,6 +31,8 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(feature = "derive_serde", derive(Serialize, Deserialize))]
 pub struct Fq(pub(crate) [u64; 7]);
 
+const SIZE: usize = 56;
+
 /// Constant representing the modulus
 /// r = 0x24000000000024000130e0000d7f70e4a803ca76f439266f443f9a5cda8a6c7be4a7a5fe8fadffd6a2a7e8c30006b9459ffffcd300000001
 const MODULUS: Fq = Fq([
@@ -203,7 +205,7 @@ prime_field_legendre!(Fq);
 
 impl Fq {
     pub const fn size() -> usize {
-        56
+        SIZE
     }
 }
 
@@ -270,7 +272,7 @@ impl ff::Field for Fq {
 
 #[derive(Clone, Copy, Debug)]
 pub struct FqRepr {
-    pub repr: [u8; 56],
+    pub repr: [u8; SIZE],
 }
 
 impl FqRepr {
@@ -281,7 +283,7 @@ impl FqRepr {
 
 impl Default for FqRepr {
     fn default() -> Self {
-        FqRepr { repr: [0u8; 56] }
+        FqRepr { repr: [0u8; SIZE] }
     }
 }
 
@@ -296,8 +298,8 @@ impl AsMut<[u8]> for FqRepr {
         self.repr.as_mut()
     }
 }
-impl From<[u8; 56]> for FqRepr {
-    fn from(repr: [u8; 56]) -> Self {
+impl From<[u8; SIZE]> for FqRepr {
+    fn from(repr: [u8; SIZE]) -> Self {
         Self { repr }
     }
 }
@@ -356,7 +358,7 @@ impl ff::PrimeField for Fq {
             0, 0, 0, 0,
         ]);
 
-        let mut res = [0; 56];
+        let mut res = [0; SIZE];
         res[0..8].copy_from_slice(&tmp.0[0].to_le_bytes());
         res[8..16].copy_from_slice(&tmp.0[1].to_le_bytes());
         res[16..24].copy_from_slice(&tmp.0[2].to_le_bytes());
@@ -537,13 +539,13 @@ mod test {
     }
 
     #[test]
-    fn bench_fp_from_u16() {
+    fn bench_fq_from_u16() {
         let repeat = 10000000;
         let mut rng = ark_std::test_rng();
         let base = (0..repeat).map(|_| (rng.next_u32() % (1 << 16)) as u64);
 
         let timer = start_timer!(|| format!("generate {} Bn256 scalar field elements", repeat));
-        let _res: Vec<_> = base.map(|b| Fq::from(b)).collect();
+        let _res: Vec<_> = base.map(Fq::from).collect();
 
         end_timer!(timer);
     }

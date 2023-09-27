@@ -23,7 +23,8 @@ use serde::{Deserialize, Serialize};
 ///
 /// `p = 0x24000000000024000130e0000d7f70e4a803ca76f439266f443f9a5c7a8a6c7be4a775fe8e177fd69ca7e85d60050af41ffffcd300000001`
 ///
-/// is the scalar field of the Pluto curve.
+/// is the scalar field of the Pluto curve (and the base field of the Eris curve).
+
 /// The internal representation of this type is seven 64-bit unsigned
 /// integers in little-endian order which account for the 446 bits required to be represented.
 ///`Fp` values are always in Montgomery form; i.e., Fp(a) = aR mod p, with R = 2^448.
@@ -31,8 +32,10 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(feature = "derive_serde", derive(Serialize, Deserialize))]
 pub struct Fp(pub(crate) [u64; 7]);
 
+const SIZE: usize = 56;
+
 /// Constant representing the modulus
-/// q = 0x24000000000024000130e0000d7f70e4a803ca76f439266f443f9a5c7a8a6c7be4a775fe8e177fd69ca7e85d60050af41ffffcd300000001
+/// `p = 0x24000000000024000130e0000d7f70e4a803ca76f439266f443f9a5c7a8a6c7be4a775fe8e177fd69ca7e85d60050af41ffffcd300000001`
 const MODULUS: Fp = Fp([
     0x1ffffcd300000001,
     0x9ca7e85d60050af4,
@@ -101,10 +104,8 @@ const GENERATOR: Fp = Fp::from_raw([0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
 const S: u32 = 32;
 
 /// GENERATOR^t where t * 2^s + 1 = p
-/// with t odd. In other words, this
-/// is a 2^s root of unity.
-/// `0x24000000000024000130e0000d7f70e4a803ca76f439266f443f9a5c7a8a6c7be4a775fe8e177fd69ca7e85d60050af41ffffcd3`
-/// `0xa5e6f78289fd24b1c64c90821c44cdce9ba1b3e90f2e88957f869667f6dfdbdbce6bb9ed38a8c2382fa11e3d3810fcc3c7bb406ec7bce04`
+/// with t odd. In other words, this is a 2^s root of unity.
+/// `0x0a5e6f78289fd24b1c64c90821c44cdce9ba1b3e90f2e88957f869667f6dfdbdbce6bb9ed38a8c2382fa11e3d3810fcc3c7bb406ec7bce04`
 
 const ROOT_OF_UNITY: Fp = Fp::from_raw([
     0x3c7bb406ec7bce04,
@@ -207,7 +208,7 @@ prime_field_legendre!(Fp);
 
 impl Fp {
     pub const fn size() -> usize {
-        56
+        SIZE
     }
 }
 
@@ -240,7 +241,8 @@ impl ff::Field for Fp {
     /// Computes the multiplicative inverse of this element,
     /// failing if the element is zero.
     fn invert(&self) -> CtOption<Self> {
-        let tmp = self.pow([
+        // p - 2
+        let tmp = self.pow_vartime([
             0x1ffffcd2ffffffff,
             0x9ca7e85d60050af4,
             0xe4a775fe8e177fd6,
@@ -274,7 +276,7 @@ impl ff::Field for Fp {
 
 #[derive(Clone, Copy, Debug)]
 pub struct FpRepr {
-    pub repr: [u8; 56],
+    pub repr: [u8; SIZE],
 }
 
 impl FpRepr {
@@ -285,7 +287,7 @@ impl FpRepr {
 
 impl Default for FpRepr {
     fn default() -> Self {
-        FpRepr { repr: [0u8; 56] }
+        FpRepr { repr: [0u8; SIZE] }
     }
 }
 
@@ -300,8 +302,8 @@ impl AsMut<[u8]> for FpRepr {
         self.repr.as_mut()
     }
 }
-impl From<[u8; 56]> for FpRepr {
-    fn from(repr: [u8; 56]) -> Self {
+impl From<[u8; SIZE]> for FpRepr {
+    fn from(repr: [u8; SIZE]) -> Self {
         Self { repr }
     }
 }
@@ -360,7 +362,7 @@ impl ff::PrimeField for Fp {
             0, 0, 0, 0,
         ]);
 
-        let mut res = [0; 56];
+        let mut res = [0; SIZE];
         res[0..8].copy_from_slice(&tmp.0[0].to_le_bytes());
         res[8..16].copy_from_slice(&tmp.0[1].to_le_bytes());
         res[16..24].copy_from_slice(&tmp.0[2].to_le_bytes());
@@ -541,13 +543,13 @@ mod test {
     }
 
     #[test]
-    fn bench_fq_from_u16() {
+    fn bench_fp_from_u16() {
         let repeat = 10000000;
         let mut rng = ark_std::test_rng();
         let base = (0..repeat).map(|_| (rng.next_u32() % (1 << 16)) as u64);
 
         let timer = start_timer!(|| format!("generate {} Bn256 scalar field elements", repeat));
-        let _res: Vec<_> = base.map(|b| Fp::from(b)).collect();
+        let _res: Vec<_> = base.map(Fp::from).collect();
 
         end_timer!(timer);
     }

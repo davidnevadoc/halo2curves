@@ -76,7 +76,7 @@ use crate::{
 
 use super::fields::fq2::Fq2;
 
-impl group::cofactor::CofactorGroup for Triton {
+impl CofactorGroup for Triton {
     type Subgroup = Triton;
 
     fn clear_cofactor(&self) -> Self {

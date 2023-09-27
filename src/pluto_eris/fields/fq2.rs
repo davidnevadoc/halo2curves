@@ -191,7 +191,7 @@ impl Fq2 {
 
     /// Converts an element of `Fq` into a byte representation in
     /// little-endian byte order.
-    pub fn to_bytes(&self) -> [u8; SIZE] {
+    pub fn to_bytes(self) -> [u8; SIZE] {
         let mut res = [0u8; SIZE];
         let c0_bytes = self.c0.to_bytes();
         let c1_bytes = self.c1.to_bytes();
@@ -278,6 +278,7 @@ impl Fq2 {
     }
 
     pub fn frobenius_map(&mut self, power: usize) {
+        //TODO Replace with constant time version if needed
         if power % 2 != 0 {
             self.conjugate()
         }
@@ -357,8 +358,6 @@ impl Field for Fq2 {
     fn sqrt(&self) -> CtOption<Self> {
         // Algorithm 10, https://eprint.iacr.org/2012/685.pdf
 
-        // Constants and aux variables
-
         // Aux elements. Described in PRECOMPUTATION of Algorithm 10.
         // As element of Fq2: E = 0 +  U *
         // 0x13e275a1fa6a13af7a82a3d83bc9e63a667c70cf991a36e603b21f15823a404a021848271d63f0875d232408689b4c6c67153f9701e19938
@@ -396,14 +395,14 @@ impl Field for Fq2 {
         ]);
 
         let b_2 = b.square();
-        let mut b_2_q = b_2.clone();
+        let mut b_2_q = b_2;
         b_2_q.frobenius_map(1);
 
         let a0 = b_2_q * b_2;
         if a0 == NEG_ONE {
             CtOption::new(a0, Choice::from(0))
         } else {
-            let mut x = b.clone();
+            let mut x = b;
             x.frobenius_map(1);
             if x * b == Fq2::ONE {
                 let x0 = (b_2 * self).c0.sqrt().unwrap();
@@ -417,61 +416,6 @@ impl Field for Fq2 {
             }
         }
     }
-
-    // Algorithm 9, https://eprint.iacr.org/2012/685.pdf
-
-    // if self.is_zero().into() {
-    //     CtOption::new(Self::ZERO, Choice::from(1))
-    // } else {
-    //     // a1 = self^((q - 3) / 4)
-    //     // 0xc19139cb84c680a6e14116da060561765e05aa45a1c72a34f082305b61f3f51
-    //     let u: [u64; 4] = [
-    //         0x4f082305b61f3f51,
-    //         0x65e05aa45a1c72a3,
-    //         0x6e14116da0605617,
-    //         0x0c19139cb84c680a,
-    //     ];
-    //     let mut a1 = self.pow(&u);
-    //     let mut alpha = a1;
-
-    //     alpha.square_assign();
-    //     alpha.mul_assign(self);
-    //     let mut a0 = alpha;
-    //     a0.frobenius_map(1);
-    //     a0.mul_assign(&alpha);
-
-    //     let neg1 = Fq2 {
-    //         // c0: NEGATIVE_ONE,
-    //         c0: -Fq::one(),
-    //         c1: Fq::zero(),
-    //     };
-
-    //     if a0 == neg1 {
-    //         CtOption::new(a0, Choice::from(0))
-    //     } else {
-    //         a1.mul_assign(self);
-
-    //         if alpha == neg1 {
-    //             a1.mul_assign(&Fq2 {
-    //                 c0: Fq::zero(),
-    //                 c1: Fq::one(),
-    //             });
-    //         } else {
-    //             alpha += &Fq2::ONE;
-    //             // alpha = alpha^((q - 1) / 2)
-    //             // 0x183227397098d014dc2822db40c0ac2ecbc0b548b438e5469e10460b6c3e7ea3
-    //             let u: [u64; 4] = [
-    //                 0x9e10460b6c3e7ea3,
-    //                 0xcbc0b548b438e546,
-    //                 0xdc2822db40c0ac2e,
-    //                 0x183227397098d014,
-    //             ];
-    //             alpha = alpha.pow(&u);
-    //             a1.mul_assign(&alpha);
-    //         }
-    //         CtOption::new(a1, Choice::from(1))
-    //     }
-    // }
 
     fn sqrt_ratio(num: &Self, div: &Self) -> (Choice, Self) {
         ff::helpers::sqrt_ratio_generic(num, div)
@@ -513,6 +457,7 @@ impl PrimeField for Fq2 {
     const NUM_BITS: u32 = 446;
     const CAPACITY: u32 = 445;
     const S: u32 = 0;
+
     // TODO: Check that we can just 0 this and forget.
     const ROOT_OF_UNITY: Self = Fq2::zero();
     const ROOT_OF_UNITY_INV: Self = Fq2 {

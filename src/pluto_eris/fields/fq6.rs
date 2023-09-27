@@ -274,15 +274,6 @@ impl Fq6 {
         self.c0.mul_by_nonresidue();
     }
 
-    // /// Multiply by cubic nonresidue v.
-    // pub fn mul_by_v(&mut self) {
-    //     use std::mem::swap;
-    //     swap(&mut self.c0, &mut self.c1);
-    //     swap(&mut self.c0, &mut self.c2);
-
-    //     self.c0.mul_by_xi();
-    // }
-
     pub fn mul_by_1(&mut self, c1: &Fq2) {
         let mut b_b = self.c1;
         b_b *= c1;
@@ -759,6 +750,7 @@ fn test_frobenius() {
 
             for _ in 0..i {
                 a = a.pow_vartime(&[
+                    // q
                     0x9ffffcd300000001,
                     0xa2a7e8c30006b945,
                     0xe4a7a5fe8fadffd6,
