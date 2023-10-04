@@ -1,9 +1,9 @@
-mod eris;
+// mod eris;
+mod curve;
 mod fields;
-mod pluto;
-mod triton;
+// mod pluto;
+// mod triton;
 
-pub use eris::Eris;
+pub use curve::{Eris, Pluto};
 pub use fields::fp::*;
 pub use fields::fq::*;
-pub use pluto::Pluto;

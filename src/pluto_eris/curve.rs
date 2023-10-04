@@ -1,8 +1,7 @@
+use super::fields::{fp::Fp, fq::Fq, fq2::Fq2};
 use crate::ff::WithSmallOrderMulGroup;
 use crate::ff::{Field, PrimeField};
 use crate::group::{prime::PrimeCurveAffine, Curve, Group as _, GroupEncoding};
-use crate::pluto_eris::fields::fp::Fp;
-use crate::pluto_eris::fields::fq::Fq;
 use crate::{Coordinates, CurveAffine, CurveExt};
 use core::cmp;
 use core::fmt::Debug;
@@ -14,6 +13,54 @@ use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
 
 #[cfg(feature = "derive_serde")]
 use serde::{Deserialize, Serialize};
+
+use crate::{
+    impl_add_binop_specify_output, impl_binops_additive, impl_binops_additive_specify_output,
+    impl_binops_multiplicative, impl_binops_multiplicative_mixed, impl_sub_binop_specify_output,
+    new_curve_impl,
+};
+
+const PLUTO_GENERATOR_X: Fq = Fq::from_raw([
+    0x9ffffcd2ffffffff,
+    0xa2a7e8c30006b945,
+    0xe4a7a5fe8fadffd6,
+    0x443f9a5cda8a6c7b,
+    0xa803ca76f439266f,
+    0x0130e0000d7f70e4,
+    0x2400000000002400,
+]);
+const PLUTO_GENERATOR_Y: Fq = Fq::from_raw([
+    0x0000000000000007,
+    0x0000000000000000,
+    0x0000000000000000,
+    0x0000000000000000,
+    0x0000000000000000,
+    0x0000000000000000,
+    0x0000000000000000,
+]);
+
+const PLUTO_B: Fq = Fq::from_raw([0x39, 0, 0, 0, 0, 0, 0]);
+
+const ERIS_GENERATOR_X: Fp = Fp::from_raw([
+    0x1ffffcd2ffffffff,
+    0x9ca7e85d60050af4,
+    0xe4a775fe8e177fd6,
+    0x443f9a5c7a8a6c7b,
+    0xa803ca76f439266f,
+    0x0130e0000d7f70e4,
+    0x2400000000002400,
+]);
+const ERIS_GENERATOR_Y: Fp = Fp::from_raw([
+    0x0000000000000007,
+    0x0000000000000000,
+    0x0000000000000000,
+    0x0000000000000000,
+    0x0000000000000000,
+    0x0000000000000000,
+    0x0000000000000000,
+]);
+
+const ERIS_B: Fp = Fp::from_raw([0x39, 0, 0, 0, 0, 0, 0]);
 
 const TRITON_GENERATOR_X: Fq2 = Fq2 {
     // 0x13576c81faf3a13fd815d0e9bd54b845ee935948b84498b27ca972bfb93722e223c9e276a4ebe7559cfc86dd865f07d64f2b5fe6556f9066
@@ -68,13 +115,61 @@ const TRITON_B: Fq2 = Fq2 {
     c1: Fq::ONE,
 };
 
-use crate::{
-    impl_add_binop_specify_output, impl_binops_additive, impl_binops_additive_specify_output,
-    impl_binops_multiplicative, impl_binops_multiplicative_mixed, impl_sub_binop_specify_output,
-    new_curve_impl,
-};
+impl group::cofactor::CofactorGroup for Pluto {
+    type Subgroup = Pluto;
 
-use super::fields::fq2::Fq2;
+    fn clear_cofactor(&self) -> Self {
+        *self
+    }
+
+    fn into_subgroup(self) -> CtOption<Self::Subgroup> {
+        CtOption::new(self, 1.into())
+    }
+
+    fn is_torsion_free(&self) -> Choice {
+        1.into()
+    }
+}
+
+new_curve_impl!(
+    (pub),
+    Pluto,
+    PlutoAffine,
+    false,
+    Fq,
+    Fp,
+    (PLUTO_GENERATOR_X,PLUTO_GENERATOR_Y),
+    PLUTO_B,
+    "pluto",
+);
+
+impl group::cofactor::CofactorGroup for Eris {
+    type Subgroup = Eris;
+
+    fn clear_cofactor(&self) -> Self {
+        *self
+    }
+
+    fn into_subgroup(self) -> CtOption<Self::Subgroup> {
+        CtOption::new(self, 1.into())
+    }
+
+    fn is_torsion_free(&self) -> Choice {
+        1.into()
+    }
+}
+
+new_curve_impl!(
+    (pub),
+    Eris,
+    ErisAffine,
+    false,
+    Fp,
+    Fq,
+    (ERIS_GENERATOR_X,ERIS_GENERATOR_Y),
+    ERIS_B,
+    "eris",
+);
 
 impl CofactorGroup for Triton {
     type Subgroup = Triton;
@@ -141,25 +236,39 @@ new_curve_impl!(
 );
 
 #[test]
-fn test_generator() {
-    let gen = Triton::generator().clear_cofactor();
-    assert!(bool::from(gen.is_on_curve()))
+fn test_curve_pluto() {
+    crate::tests::curve::curve_tests::<Pluto>();
 }
-
 #[test]
-fn test_curve() {
+fn test_curve_eris() {
+    crate::tests::curve::curve_tests::<Eris>();
+}
+#[test]
+fn test_curve_triton() {
     crate::tests::curve::curve_tests::<Triton>();
 }
 
 #[test]
 fn test_serialization() {
+    crate::tests::curve::random_serialization_test::<Pluto>();
+    crate::tests::curve::random_serialization_test::<Eris>();
     crate::tests::curve::random_serialization_test::<Triton>();
+    #[cfg(feature = "derive_serde")]
+    crate::tests::curve::random_serde_test::<Pluto>();
+    #[cfg(feature = "derive_serde")]
+    crate::tests::curve::random_serde_test::<Eris>();
     #[cfg(feature = "derive_serde")]
     crate::tests::curve::random_serde_test::<Triton>();
 }
 
 #[test]
 fn test_endo_consistency() {
+    let g = Eris::generator();
+    assert_eq!(g * Fq::ZETA, g.endo());
+
+    let g = Pluto::generator();
+    assert_eq!(g * Fp::ZETA, g.endo());
+
     let g = Triton::generator();
     assert_eq!(g * Fp::ZETA, g.endo());
 }
