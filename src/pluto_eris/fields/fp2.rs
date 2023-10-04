@@ -1,4 +1,4 @@
-use super::fq::{Fq, MODULUS_STR};
+use super::fp::{Fp, MODULUS_STR};
 use crate::ff::{Field, FromUniformBytes, PrimeField, WithSmallOrderMulGroup};
 use crate::legendre::Legendre;
 use core::convert::TryInto;
@@ -11,13 +11,13 @@ use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
 #[cfg(feature = "derive_serde")]
 use serde::{Deserialize, Serialize};
 
-/// -ALPHA is a quadratic non-residue in Fq. Fq2 = Fq[X]/(X^2 + ALPHA)
+/// -ALPHA is a quadratic non-residue in Fp. Fp2 = Fp[X]/(X^2 + ALPHA)
 /// We introduce the variable u such that u^2 = -ALPHA
 // const ALPHA: u64 = 5;
 
 // U_SQUARE = -5
 // 0x24000000000024000130e0000d7f70e4a803ca76f439266f443f9a5cda8a6c7be4a7a5fe8fadffd6a2a7e8c30006b9459ffffcd2fffffffc
-const U_SQUARE: Fq = Fq::from_raw([
+const U_SQUARE: Fp = Fp::from_raw([
     0x9ffffcd2fffffffc,
     0xa2a7e8c30006b945,
     0xe4a7a5fe8fadffd6,
@@ -27,23 +27,23 @@ const U_SQUARE: Fq = Fq::from_raw([
     0x2400000000002400,
 ]);
 
-const NEG_ONE: Fq2 = Fq2 {
-    c0: super::fq::NEG_ONE,
-    c1: Fq::ZERO,
+const NEG_ONE: Fp2 = Fp2 {
+    c0: super::fp::NEG_ONE,
+    c1: Fp::ZERO,
 };
 
-/// An element of Fq2, represented by c0 + c1 * u.
+/// An element of Fp2, represented by c0 + c1 * u.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "derive_serde", derive(Serialize, Deserialize))]
-pub struct Fq2 {
-    pub c0: Fq,
-    pub c1: Fq,
+pub struct Fp2 {
+    pub c0: Fp,
+    pub c1: Fp,
 }
 
-/// `Fq2` elements are ordered lexicographically.
-impl Ord for Fq2 {
+/// `Fp2` elements are ordered lexicographically.
+impl Ord for Fp2 {
     #[inline(always)]
-    fn cmp(&self, other: &Fq2) -> Ordering {
+    fn cmp(&self, other: &Fp2) -> Ordering {
         match self.c1.cmp(&other.c1) {
             Ordering::Greater => Ordering::Greater,
             Ordering::Less => Ordering::Less,
@@ -52,88 +52,88 @@ impl Ord for Fq2 {
     }
 }
 
-impl PartialOrd for Fq2 {
+impl PartialOrd for Fp2 {
     #[inline(always)]
-    fn partial_cmp(&self, other: &Fq2) -> Option<Ordering> {
+    fn partial_cmp(&self, other: &Fp2) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl ConditionallySelectable for Fq2 {
+impl ConditionallySelectable for Fp2 {
     fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
-        Fq2 {
-            c0: Fq::conditional_select(&a.c0, &b.c0, choice),
-            c1: Fq::conditional_select(&a.c1, &b.c1, choice),
+        Fp2 {
+            c0: Fp::conditional_select(&a.c0, &b.c0, choice),
+            c1: Fp::conditional_select(&a.c1, &b.c1, choice),
         }
     }
 }
 
-impl ConstantTimeEq for Fq2 {
+impl ConstantTimeEq for Fp2 {
     fn ct_eq(&self, other: &Self) -> Choice {
         self.c0.ct_eq(&other.c0) & self.c1.ct_eq(&other.c1)
     }
 }
 
-impl Default for Fq2 {
+impl Default for Fp2 {
     #[inline]
     fn default() -> Self {
         Self::ZERO
     }
 }
 
-impl From<Fq2> for [u8; 112] {
-    fn from(value: Fq2) -> [u8; 112] {
+impl From<Fp2> for [u8; 112] {
+    fn from(value: Fp2) -> [u8; 112] {
         value.to_bytes()
     }
 }
 
-impl<'a> From<&'a Fq2> for [u8; 112] {
-    fn from(value: &'a Fq2) -> [u8; 112] {
+impl<'a> From<&'a Fp2> for [u8; 112] {
+    fn from(value: &'a Fp2) -> [u8; 112] {
         value.to_bytes()
     }
 }
 
-impl Neg for Fq2 {
-    type Output = Fq2;
+impl Neg for Fp2 {
+    type Output = Fp2;
 
     #[inline]
-    fn neg(self) -> Fq2 {
+    fn neg(self) -> Fp2 {
         -&self
     }
 }
 
-impl<'a> Neg for &'a Fq2 {
-    type Output = Fq2;
+impl<'a> Neg for &'a Fp2 {
+    type Output = Fp2;
 
     #[inline]
-    fn neg(self) -> Fq2 {
+    fn neg(self) -> Fp2 {
         self.neg()
     }
 }
 
-impl<'a, 'b> Sub<&'b Fq2> for &'a Fq2 {
-    type Output = Fq2;
+impl<'a, 'b> Sub<&'b Fp2> for &'a Fp2 {
+    type Output = Fp2;
 
     #[inline]
-    fn sub(self, rhs: &'b Fq2) -> Fq2 {
+    fn sub(self, rhs: &'b Fp2) -> Fp2 {
         self.sub(rhs)
     }
 }
 
-impl<'a, 'b> Add<&'b Fq2> for &'a Fq2 {
-    type Output = Fq2;
+impl<'a, 'b> Add<&'b Fp2> for &'a Fp2 {
+    type Output = Fp2;
 
     #[inline]
-    fn add(self, rhs: &'b Fq2) -> Fq2 {
+    fn add(self, rhs: &'b Fp2) -> Fp2 {
         self.add(rhs)
     }
 }
 
-impl<'a, 'b> Mul<&'b Fq2> for &'a Fq2 {
-    type Output = Fq2;
+impl<'a, 'b> Mul<&'b Fp2> for &'a Fp2 {
+    type Output = Fp2;
 
     #[inline]
-    fn mul(self, rhs: &'b Fq2) -> Fq2 {
+    fn mul(self, rhs: &'b Fp2) -> Fp2 {
         self.mul(rhs)
     }
 }
@@ -143,32 +143,32 @@ use crate::{
     impl_binops_multiplicative, impl_binops_multiplicative_mixed, impl_sub_binop_specify_output,
     impl_sum_prod,
 };
-impl_binops_additive!(Fq2, Fq2);
-impl_binops_multiplicative!(Fq2, Fq2);
-impl_sum_prod!(Fq2);
+impl_binops_additive!(Fp2, Fp2);
+impl_binops_multiplicative!(Fp2, Fp2);
+impl_sum_prod!(Fp2);
 
 const SIZE: usize = 112;
 const COORD_SIZE: usize = 56;
 
-impl Fq2 {
+impl Fp2 {
     #[inline]
-    pub const fn zero() -> Fq2 {
-        Fq2 {
-            c0: Fq::zero(),
-            c1: Fq::zero(),
+    pub const fn zero() -> Fp2 {
+        Fp2 {
+            c0: Fp::zero(),
+            c1: Fp::zero(),
         }
     }
 
     #[inline]
-    pub const fn one() -> Fq2 {
-        Fq2 {
-            c0: Fq::one(),
-            c1: Fq::zero(),
+    pub const fn one() -> Fp2 {
+        Fp2 {
+            c0: Fp::one(),
+            c1: Fp::zero(),
         }
     }
 
-    pub const fn new(c0: Fq, c1: Fq) -> Self {
-        Fq2 { c0, c1 }
+    pub const fn new(c0: Fp, c1: Fp) -> Self {
+        Fp2 { c0, c1 }
     }
 
     pub const fn size() -> usize {
@@ -176,12 +176,12 @@ impl Fq2 {
     }
 
     /// Attempts to convert a little-endian byte representation of
-    /// a scalar into a `Fq`, failing if the input is not canonical.
-    pub fn from_bytes(bytes: &[u8; SIZE]) -> CtOption<Fq2> {
-        let c0 = Fq::from_bytes(bytes[0..COORD_SIZE].try_into().unwrap());
-        let c1 = Fq::from_bytes(bytes[COORD_SIZE..SIZE].try_into().unwrap());
+    /// a scalar into a `Fp`, failing if the input is not canonical.
+    pub fn from_bytes(bytes: &[u8; SIZE]) -> CtOption<Fp2> {
+        let c0 = Fp::from_bytes(bytes[0..COORD_SIZE].try_into().unwrap());
+        let c1 = Fp::from_bytes(bytes[COORD_SIZE..SIZE].try_into().unwrap());
         CtOption::new(
-            Fq2 {
+            Fp2 {
                 c0: c0.unwrap(),
                 c1: c1.unwrap(),
             },
@@ -189,7 +189,7 @@ impl Fq2 {
         )
     }
 
-    /// Converts an element of `Fq` into a byte representation in
+    /// Converts an element of `Fp` into a byte representation in
     /// little-endian byte order.
     pub fn to_bytes(self) -> [u8; SIZE] {
         let mut res = [0u8; SIZE];
@@ -304,7 +304,7 @@ impl Fq2 {
         //t0 = c0^2 - U_SQUARE c1^2
         t0 -= &t1;
         t0.invert().map(|t| {
-            let mut tmp = Fq2 {
+            let mut tmp = Fp2 {
                 c0: self.c0,
                 c1: self.c1,
             };
@@ -317,13 +317,13 @@ impl Fq2 {
     }
 }
 
-impl Legendre for Fq2 {
-    type BasePrimeField = Fq;
+impl Legendre for Fp2 {
+    type BasePrimeField = Fp;
     fn legendre_exp() -> &'static [u64] {
         Self::BasePrimeField::legendre_exp()
     }
 
-    /// Norm of Fq2 as extension field in u over Fq
+    /// Norm of Fp2 as extension field in u over Fp
     fn norm(&self) -> Self::BasePrimeField {
         // norm = self * self.cojungate()
         let t0 = self.c0.square();
@@ -332,14 +332,14 @@ impl Legendre for Fq2 {
     }
 }
 
-impl Field for Fq2 {
+impl Field for Fp2 {
     const ZERO: Self = Self::zero();
     const ONE: Self = Self::one();
 
     fn random(mut rng: impl RngCore) -> Self {
-        Fq2 {
-            c0: Fq::random(&mut rng),
-            c1: Fq::random(&mut rng),
+        Fp2 {
+            c0: Fp::random(&mut rng),
+            c1: Fp::random(&mut rng),
         }
     }
 
@@ -359,11 +359,11 @@ impl Field for Fq2 {
         // Algorithm 10, https://eprint.iacr.org/2012/685.pdf
 
         // Aux elements. Described in PRECOMPUTATION of Algorithm 10.
-        // As element of Fq2: E = 0 +  U *
+        // As element of Fp2: E = 0 +  U *
         // 0x13e275a1fa6a13af7a82a3d83bc9e63a667c70cf991a36e603b21f15823a404a021848271d63f0875d232408689b4c6c67153f9701e19938
-        const E: Fq2 = Fq2 {
-            c0: Fq::ZERO,
-            c1: Fq::from_raw([
+        const E: Fp2 = Fp2 {
+            c0: Fp::ZERO,
+            c1: Fp::from_raw([
                 0x67153f9701e19938,
                 0x5d232408689b4c6c,
                 0x021848271d63f087,
@@ -374,16 +374,16 @@ impl Field for Fq2 {
             ]),
         };
 
-        // As element of Fq2: f = 5 + 0 * U
+        // As element of Fp2: f = 5 + 0 * U
         // 0x5
-        const F: Fq2 = Fq2 {
-            c0: Fq::from_raw([0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
-            c1: Fq::ZERO,
+        const F: Fp2 = Fp2 {
+            c0: Fp::from_raw([0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
+            c1: Fp::ZERO,
         };
 
         // Algorithm (not constant time)
         let b = self.pow_vartime(&[
-            // (q-1)/4 =
+            // (p-1)/4 =
             // 0x900000000000900004c3800035fdc392a00f29dbd0e499bd10fe69736a29b1ef929e97fa3eb7ff5a8a9fa30c001ae5167ffff34c0000000
             0x67ffff34c0000000,
             0xa8a9fa30c001ae51,
@@ -404,7 +404,7 @@ impl Field for Fq2 {
         } else {
             let mut x = b;
             x.frobenius_map(1);
-            if x * b == Fq2::ONE {
+            if x * b == Fp2::ONE {
                 let x0 = (b_2 * self).c0.sqrt().unwrap();
                 x.c0.mul_assign(x0);
                 x.c1.mul_assign(x0);
@@ -426,62 +426,62 @@ impl Field for Fq2 {
     }
 }
 
-impl From<bool> for Fq2 {
-    fn from(bit: bool) -> Fq2 {
+impl From<bool> for Fp2 {
+    fn from(bit: bool) -> Fp2 {
         if bit {
-            Fq2::ONE
+            Fp2::ONE
         } else {
-            Fq2::ZERO
+            Fp2::ZERO
         }
     }
 }
 
-impl From<u64> for Fq2 {
+impl From<u64> for Fp2 {
     fn from(val: u64) -> Self {
-        Fq2 {
-            c0: Fq::from(val),
-            c1: Fq::zero(),
+        Fp2 {
+            c0: Fp::from(val),
+            c1: Fp::zero(),
         }
     }
 }
 
 // This trait is only implemented to satisfy the requirement of CurveExt
-impl PrimeField for Fq2 {
-    type Repr = Fq2Bytes;
+impl PrimeField for Fp2 {
+    type Repr = Fp2Bytes;
 
     const MODULUS: &'static str = MODULUS_STR;
-    const MULTIPLICATIVE_GENERATOR: Self = Fq2 {
-        c0: Fq::MULTIPLICATIVE_GENERATOR,
-        c1: Fq::ZERO,
+    const MULTIPLICATIVE_GENERATOR: Self = Fp2 {
+        c0: Fp::MULTIPLICATIVE_GENERATOR,
+        c1: Fp::ZERO,
     };
     const NUM_BITS: u32 = 446;
     const CAPACITY: u32 = 445;
     const S: u32 = 0;
 
     // TODO: Check that we can just 0 this and forget.
-    const ROOT_OF_UNITY: Self = Fq2::zero();
-    const ROOT_OF_UNITY_INV: Self = Fq2 {
-        c0: Fq::zero(),
-        c1: Fq::zero(),
+    const ROOT_OF_UNITY: Self = Fp2::zero();
+    const ROOT_OF_UNITY_INV: Self = Fp2 {
+        c0: Fp::zero(),
+        c1: Fp::zero(),
     };
-    const DELTA: Self = Fq2 {
-        c0: Fq::zero(),
-        c1: Fq::zero(),
+    const DELTA: Self = Fp2 {
+        c0: Fp::zero(),
+        c1: Fp::zero(),
     };
-    const TWO_INV: Self = Fq2 {
-        c0: Fq::TWO_INV,
-        c1: Fq::zero(),
+    const TWO_INV: Self = Fp2 {
+        c0: Fp::TWO_INV,
+        c1: Fp::zero(),
     };
 
     fn from_repr(repr: Self::Repr) -> CtOption<Self> {
-        let c0 = Fq::from_bytes(&repr.0[..COORD_SIZE].try_into().unwrap());
-        let c1 = Fq::from_bytes(&repr.0[COORD_SIZE..].try_into().unwrap());
+        let c0 = Fp::from_bytes(&repr.0[..COORD_SIZE].try_into().unwrap());
+        let c1 = Fp::from_bytes(&repr.0[COORD_SIZE..].try_into().unwrap());
         // Disallow overflow representation
-        CtOption::new(Fq2::new(c0.unwrap(), c1.unwrap()), Choice::from(1))
+        CtOption::new(Fp2::new(c0.unwrap(), c1.unwrap()), Choice::from(1))
     }
 
     fn to_repr(&self) -> Self::Repr {
-        Fq2Bytes(self.to_bytes())
+        Fp2Bytes(self.to_bytes())
     }
 
     fn is_odd(&self) -> Choice {
@@ -489,43 +489,43 @@ impl PrimeField for Fq2 {
     }
 }
 
-impl FromUniformBytes<64> for Fq2 {
+impl FromUniformBytes<64> for Fp2 {
     fn from_uniform_bytes(bytes: &[u8; 64]) -> Self {
-        Self::new(Fq::from_uniform_bytes(bytes), Fq::zero())
+        Self::new(Fp::from_uniform_bytes(bytes), Fp::zero())
     }
 }
 #[derive(Clone, Copy, Debug)]
-pub struct Fq2Bytes([u8; SIZE]);
+pub struct Fp2Bytes([u8; SIZE]);
 
-impl Default for Fq2Bytes {
+impl Default for Fp2Bytes {
     fn default() -> Self {
         Self([0u8; SIZE])
     }
 }
 
-impl AsMut<[u8]> for Fq2Bytes {
+impl AsMut<[u8]> for Fp2Bytes {
     fn as_mut(&mut self) -> &mut [u8] {
         &mut self.0
     }
 }
 
-impl AsRef<[u8]> for Fq2Bytes {
+impl AsRef<[u8]> for Fp2Bytes {
     fn as_ref(&self) -> &[u8] {
         &self.0
     }
 }
 
-impl crate::serde::SerdeObject for Fq2 {
+impl crate::serde::SerdeObject for Fp2 {
     fn from_raw_bytes_unchecked(bytes: &[u8]) -> Self {
         debug_assert_eq!(bytes.len(), 112);
-        let [c0, c1] = [0, 56].map(|i| Fq::from_raw_bytes_unchecked(&bytes[i..i + 56]));
+        let [c0, c1] = [0, 56].map(|i| Fp::from_raw_bytes_unchecked(&bytes[i..i + 56]));
         Self { c0, c1 }
     }
     fn from_raw_bytes(bytes: &[u8]) -> Option<Self> {
         if bytes.len() != SIZE {
             return None;
         }
-        let [c0, c1] = [0, COORD_SIZE].map(|i| Fq::from_raw_bytes(&bytes[i..i + COORD_SIZE]));
+        let [c0, c1] = [0, COORD_SIZE].map(|i| Fp::from_raw_bytes(&bytes[i..i + COORD_SIZE]));
         c0.zip(c1).map(|(c0, c1)| Self { c0, c1 })
     }
     fn to_raw_bytes(&self) -> Vec<u8> {
@@ -536,12 +536,12 @@ impl crate::serde::SerdeObject for Fq2 {
         res
     }
     fn read_raw_unchecked<R: std::io::Read>(reader: &mut R) -> Self {
-        let [c0, c1] = [(); 2].map(|_| Fq::read_raw_unchecked(reader));
+        let [c0, c1] = [(); 2].map(|_| Fp::read_raw_unchecked(reader));
         Self { c0, c1 }
     }
     fn read_raw<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
-        let c0 = Fq::read_raw(reader)?;
-        let c1 = Fq::read_raw(reader)?;
+        let c0 = Fp::read_raw(reader)?;
+        let c1 = Fp::read_raw(reader)?;
         Ok(Self { c0, c1 })
     }
     fn write_raw<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
@@ -550,10 +550,10 @@ impl crate::serde::SerdeObject for Fq2 {
     }
 }
 
-impl WithSmallOrderMulGroup<3> for Fq2 {
-    const ZETA: Self = Fq2 {
+impl WithSmallOrderMulGroup<3> for Fp2 {
+    const ZETA: Self = Fp2 {
         // 0x24000000000024000130e0000d7f28e4a803ca76be3924a5f43f8cddf9a5c4781b50d5e1ff708dc8d9fa5d8a200bc4398ffff80f80000002
-        c0: Fq::from_raw([
+        c0: Fp::from_raw([
             0x8ffff80f80000002,
             0xd9fa5d8a200bc439,
             0x1b50d5e1ff708dc8,
@@ -562,7 +562,7 @@ impl WithSmallOrderMulGroup<3> for Fq2 {
             0x0130e0000d7f28e4,
             0x2400000000002400,
         ]),
-        c1: Fq::zero(),
+        c1: Fp::zero(),
     };
 }
 
@@ -578,58 +578,58 @@ fn test_ser() {
         0xe5,
     ]);
 
-    let a0 = Fq2::random(&mut rng);
+    let a0 = Fp2::random(&mut rng);
     let a_bytes = a0.to_bytes();
-    let a1 = Fq2::from_bytes(&a_bytes).unwrap();
+    let a1 = Fp2::from_bytes(&a_bytes).unwrap();
     assert_eq!(a0, a1);
 }
 
 #[test]
-fn test_fq2_ordering() {
-    let mut a = Fq2 {
-        c0: Fq::zero(),
-        c1: Fq::zero(),
+fn test_fp2_ordering() {
+    let mut a = Fp2 {
+        c0: Fp::zero(),
+        c1: Fp::zero(),
     };
 
     let mut b = a;
 
     assert!(a.cmp(&b) == Ordering::Equal);
-    b.c0 += &Fq::one();
+    b.c0 += &Fp::one();
     assert!(a.cmp(&b) == Ordering::Less);
-    a.c0 += &Fq::one();
+    a.c0 += &Fp::one();
     assert!(a.cmp(&b) == Ordering::Equal);
-    b.c1 += &Fq::one();
+    b.c1 += &Fp::one();
     assert!(a.cmp(&b) == Ordering::Less);
-    a.c0 += &Fq::one();
+    a.c0 += &Fp::one();
     assert!(a.cmp(&b) == Ordering::Less);
-    a.c1 += &Fq::one();
+    a.c1 += &Fp::one();
     assert!(a.cmp(&b) == Ordering::Greater);
-    b.c0 += &Fq::one();
+    b.c0 += &Fp::one();
     assert!(a.cmp(&b) == Ordering::Equal);
 }
 
 #[test]
-fn test_fq2_basics() {
+fn test_fp2_basics() {
     assert_eq!(
-        Fq2 {
-            c0: Fq::zero(),
-            c1: Fq::zero(),
+        Fp2 {
+            c0: Fp::zero(),
+            c1: Fp::zero(),
         },
-        Fq2::ZERO
+        Fp2::ZERO
     );
     assert_eq!(
-        Fq2 {
-            c0: Fq::one(),
-            c1: Fq::zero(),
+        Fp2 {
+            c0: Fp::one(),
+            c1: Fp::zero(),
         },
-        Fq2::ONE
+        Fp2::ONE
     );
-    assert_eq!(Fq2::ZERO.is_zero().unwrap_u8(), 1);
-    assert_eq!(Fq2::ONE.is_zero().unwrap_u8(), 0);
+    assert_eq!(Fp2::ZERO.is_zero().unwrap_u8(), 1);
+    assert_eq!(Fp2::ONE.is_zero().unwrap_u8(), 0);
     assert_eq!(
-        Fq2 {
-            c0: Fq::zero(),
-            c1: Fq::one(),
+        Fp2 {
+            c0: Fp::zero(),
+            c1: Fp::one(),
         }
         .is_zero()
         .unwrap_u8(),
@@ -638,52 +638,52 @@ fn test_fq2_basics() {
 }
 
 #[test]
-fn test_fq2_squaring() {
+fn test_fp2_squaring() {
     // u + 1
-    let mut a = Fq2 {
-        c0: Fq::one(),
-        c1: Fq::one(),
+    let mut a = Fp2 {
+        c0: Fp::one(),
+        c1: Fp::one(),
     };
     // (u + 1) ^2 = 1 + u^2 + 2u = -4 + 2u
     a.square_assign();
-    let minus_4 = -Fq::from(4u64);
+    let minus_4 = -Fp::from(4u64);
     assert_eq!(
         a,
-        Fq2 {
+        Fp2 {
             c0: minus_4,
-            c1: Fq::one() + Fq::one(),
+            c1: Fp::one() + Fp::one(),
         }
     );
 
     // u
-    let mut a = Fq2 {
-        c0: Fq::zero(),
-        c1: Fq::one(),
+    let mut a = Fp2 {
+        c0: Fp::zero(),
+        c1: Fp::one(),
     };
     // u^2
     a.square_assign();
     assert_eq!(
         a,
-        Fq2 {
+        Fp2 {
             c0: U_SQUARE,
-            c1: Fq::zero(),
+            c1: Fp::zero(),
         }
     );
 }
 
 #[test]
-fn test_fq2_mul_nonresidue() {
+fn test_fp2_mul_nonresidue() {
     let mut rng = XorShiftRng::from_seed([
         0x59, 0x62, 0xbe, 0x5d, 0x76, 0x3d, 0x31, 0x8d, 0x17, 0xdb, 0x37, 0x32, 0x54, 0x06, 0xbc,
         0xe5,
     ]);
-    let nqr = Fq2 {
-        c0: Fq::one() + Fq::one(),
-        c1: Fq::one(),
+    let nqr = Fp2 {
+        c0: Fp::one() + Fp::one(),
+        c1: Fp::one(),
     };
 
     for _ in 0..1000 {
-        let mut a = Fq2::random(&mut rng);
+        let mut a = Fp2::random(&mut rng);
         let mut b = a;
         a.mul_by_nonresidue();
         b.mul_assign(&nqr);
@@ -700,17 +700,17 @@ pub fn test_sqrt() {
     ]);
     const N_ITER: usize = 1000;
     for _ in 0..N_ITER {
-        let a = Fq2::random(&mut rng);
-        if a.legendre() == -Fq::ONE {
+        let a = Fp2::random(&mut rng);
+        if a.legendre() == -Fp::ONE {
             assert!(bool::from(a.sqrt().is_none()));
         }
     }
 
     for _ in 0..N_ITER {
-        let a = Fq2::random(&mut rng);
+        let a = Fp2::random(&mut rng);
         let mut b = a;
         b.square_assign();
-        assert_eq!(b.legendre(), Fq::ONE);
+        assert_eq!(b.legendre(), Fp::ONE);
 
         let b = b.sqrt().unwrap();
         let mut negb = b;
@@ -719,11 +719,11 @@ pub fn test_sqrt() {
         assert!(a == b || a == negb);
     }
 
-    let mut c = Fq2::ONE;
+    let mut c = Fp2::ONE;
     for _ in 0..N_ITER {
         let mut b = c;
         b.square_assign();
-        assert_eq!(b.legendre(), Fq::ONE);
+        assert_eq!(b.legendre(), Fp::ONE);
 
         b = b.sqrt().unwrap();
 
@@ -733,7 +733,7 @@ pub fn test_sqrt() {
 
         assert_eq!(b, c);
 
-        c += &Fq2::ONE;
+        c += &Fp2::ONE;
     }
 }
 
@@ -746,7 +746,7 @@ fn test_frobenius() {
 
     for _ in 0..50 {
         for i in 0..8 {
-            let mut a = Fq2::random(&mut rng);
+            let mut a = Fp2::random(&mut rng);
             let mut b = a;
 
             for _ in 0..i {
@@ -769,12 +769,12 @@ fn test_frobenius() {
 
 #[test]
 fn test_field() {
-    crate::tests::field::random_field_tests::<Fq2>("fq2".to_string());
+    crate::tests::field::random_field_tests::<Fp2>("fp2".to_string());
 }
 
 #[test]
 fn test_serialization() {
-    crate::tests::field::random_serialization_test::<Fq2>("fq2".to_string());
+    crate::tests::field::random_serialization_test::<Fp2>("fp2".to_string());
     #[cfg(feature = "derive_serde")]
-    crate::tests::field::random_serde_test::<Fq2>("fq2".to_string());
+    crate::tests::field::random_serde_test::<Fp2>("fp2".to_string());
 }

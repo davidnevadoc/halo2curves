@@ -1,84 +1,84 @@
-use super::fq::Fq;
-use super::fq2::Fq2;
+use super::fp::Fp;
+use super::fp2::Fp2;
 use crate::ff::Field;
 use core::ops::{Add, Mul, Neg, Sub};
 use rand::RngCore;
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
 
-/// -BETA is a cubic non-residue in Fq2. Fq6 = Fq2[X]/(X^3 + BETA)
+/// -BETA is a cubic non-residue in Fp2. Fp6 = Fp2[X]/(X^3 + BETA)
 /// We introduce the variable v such that v^3 = -ALPHA
 // BETA = - (u+2)
 
 // V_CUBE = u + 2
-// const V_CUBE: Fq2 = Fq2 {
-//     c0: Fq::from_raw([0x02, 0, 0, 0, 0, 0, 0]),
-//     c1: Fq::from_raw([0x01, 0, 0, 0, 0, 0, 0]),
+// const V_CUBE: Fp2 = Fp2 {
+//     c0: Fp::from_raw([0x02, 0, 0, 0, 0, 0, 0]),
+//     c1: Fp::from_raw([0x01, 0, 0, 0, 0, 0, 0]),
 // };
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Default)]
-pub struct Fq6 {
-    pub c0: Fq2,
-    pub c1: Fq2,
-    pub c2: Fq2,
+pub struct Fp6 {
+    pub c0: Fp2,
+    pub c1: Fp2,
+    pub c2: Fp2,
 }
 
-impl ConditionallySelectable for Fq6 {
+impl ConditionallySelectable for Fp6 {
     fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
-        Fq6 {
-            c0: Fq2::conditional_select(&a.c0, &b.c0, choice),
-            c1: Fq2::conditional_select(&a.c1, &b.c1, choice),
-            c2: Fq2::conditional_select(&a.c2, &b.c2, choice),
+        Fp6 {
+            c0: Fp2::conditional_select(&a.c0, &b.c0, choice),
+            c1: Fp2::conditional_select(&a.c1, &b.c1, choice),
+            c2: Fp2::conditional_select(&a.c2, &b.c2, choice),
         }
     }
 }
 
-impl ConstantTimeEq for Fq6 {
+impl ConstantTimeEq for Fp6 {
     fn ct_eq(&self, other: &Self) -> Choice {
         self.c0.ct_eq(&other.c0) & self.c1.ct_eq(&other.c1) & self.c2.ct_eq(&other.c2)
     }
 }
 
-impl Neg for Fq6 {
-    type Output = Fq6;
+impl Neg for Fp6 {
+    type Output = Fp6;
 
     #[inline]
-    fn neg(self) -> Fq6 {
+    fn neg(self) -> Fp6 {
         -&self
     }
 }
 
-impl<'a> Neg for &'a Fq6 {
-    type Output = Fq6;
+impl<'a> Neg for &'a Fp6 {
+    type Output = Fp6;
 
     #[inline]
-    fn neg(self) -> Fq6 {
+    fn neg(self) -> Fp6 {
         self.neg()
     }
 }
 
-impl<'a, 'b> Sub<&'b Fq6> for &'a Fq6 {
-    type Output = Fq6;
+impl<'a, 'b> Sub<&'b Fp6> for &'a Fp6 {
+    type Output = Fp6;
 
     #[inline]
-    fn sub(self, rhs: &'b Fq6) -> Fq6 {
+    fn sub(self, rhs: &'b Fp6) -> Fp6 {
         self.sub(rhs)
     }
 }
 
-impl<'a, 'b> Add<&'b Fq6> for &'a Fq6 {
-    type Output = Fq6;
+impl<'a, 'b> Add<&'b Fp6> for &'a Fp6 {
+    type Output = Fp6;
 
     #[inline]
-    fn add(self, rhs: &'b Fq6) -> Fq6 {
+    fn add(self, rhs: &'b Fp6) -> Fp6 {
         self.add(rhs)
     }
 }
 
-impl<'a, 'b> Mul<&'b Fq6> for &'a Fq6 {
-    type Output = Fq6;
+impl<'a, 'b> Mul<&'b Fp6> for &'a Fp6 {
+    type Output = Fp6;
 
     #[inline]
-    fn mul(self, rhs: &'b Fq6) -> Fq6 {
+    fn mul(self, rhs: &'b Fp6) -> Fp6 {
         self.mul(rhs)
     }
 }
@@ -88,26 +88,26 @@ use crate::{
     impl_binops_multiplicative, impl_binops_multiplicative_mixed, impl_sub_binop_specify_output,
     impl_sum_prod,
 };
-impl_binops_additive!(Fq6, Fq6);
-impl_binops_multiplicative!(Fq6, Fq6);
-impl_sum_prod!(Fq6);
+impl_binops_additive!(Fp6, Fp6);
+impl_binops_multiplicative!(Fp6, Fp6);
+impl_sum_prod!(Fp6);
 
-impl Fq6 {
+impl Fp6 {
     #[inline]
     pub const fn zero() -> Self {
-        Fq6 {
-            c0: Fq2::ZERO,
-            c1: Fq2::ZERO,
-            c2: Fq2::ZERO,
+        Fp6 {
+            c0: Fp2::ZERO,
+            c1: Fp2::ZERO,
+            c2: Fp2::ZERO,
         }
     }
 
     #[inline]
     pub const fn one() -> Self {
-        Fq6 {
-            c0: Fq2::ONE,
-            c1: Fq2::ZERO,
-            c2: Fq2::ZERO,
+        Fp6 {
+            c0: Fp2::ONE,
+            c1: Fp2::ZERO,
+            c2: Fp2::ZERO,
         }
     }
 
@@ -261,8 +261,8 @@ impl Fq6 {
         self.c1.frobenius_map(power);
         self.c2.frobenius_map(power);
 
-        self.c1.mul_assign(&FROBENIUS_COEFF_FQ6_C1[power % 6]);
-        self.c2.mul_assign(&FROBENIUS_COEFF_FQ6_C2[power % 6]);
+        self.c1.mul_assign(&FROBENIUS_COEFF_FP6_C1[power % 6]);
+        self.c2.mul_assign(&FROBENIUS_COEFF_FP6_C2[power % 6]);
     }
 
     /// Multiply by cubic nonresidue v.
@@ -274,7 +274,7 @@ impl Fq6 {
         self.c0.mul_by_nonresidue();
     }
 
-    pub fn mul_by_1(&mut self, c1: &Fq2) {
+    pub fn mul_by_1(&mut self, c1: &Fp2) {
         let mut b_b = self.c1;
         b_b *= c1;
 
@@ -302,7 +302,7 @@ impl Fq6 {
         self.c2 = b_b;
     }
 
-    pub fn mul_by_01(&mut self, c0: &Fq2, c1: &Fq2) {
+    pub fn mul_by_01(&mut self, c0: &Fp2, c1: &Fp2) {
         let mut a_a = self.c0;
         let mut b_b = self.c1;
         a_a *= c0;
@@ -382,7 +382,7 @@ impl Fq6 {
         tmp1 += &tmp2;
 
         tmp1.invert().map(|t| {
-            let mut tmp = Fq6 {
+            let mut tmp = Fp6 {
                 c0: t,
                 c1: t,
                 c2: t,
@@ -396,15 +396,15 @@ impl Fq6 {
     }
 }
 
-impl Field for Fq6 {
+impl Field for Fp6 {
     const ZERO: Self = Self::zero();
     const ONE: Self = Self::one();
 
     fn random(mut rng: impl RngCore) -> Self {
-        Fq6 {
-            c0: Fq2::random(&mut rng),
-            c1: Fq2::random(&mut rng),
-            c2: Fq2::random(&mut rng),
+        Fp6 {
+            c0: Fp2::random(&mut rng),
+            c1: Fp2::random(&mut rng),
+            c2: Fp2::random(&mut rng),
         }
     }
 
@@ -433,13 +433,13 @@ impl Field for Fq6 {
     }
 }
 
-pub const FROBENIUS_COEFF_FQ6_C1: [Fq2; 6] = [
-    // Fq2(v^3)**(((q^0) - 1) / 3)
-    Fq2::ONE,
-    // Fq2(v^3)**(((q^1) - 1) / 3)
-    Fq2 {
+pub const FROBENIUS_COEFF_FP6_C1: [Fp2; 6] = [
+    // Fp2(v^3)**(((p^0) - 1) / 3)
+    Fp2::ONE,
+    // Fp2(v^3)**(((p^1) - 1) / 3)
+    Fp2 {
         // 0xa12a7a5bb16c30e70ed772cd3a465fb9a95b4ac5841e111d3ee22591d2c9f387870fd58bb208ac369b0926203e0d8b2672a2f804be5c3d2
-        c0: Fq::from_raw([
+        c0: Fp::from_raw([
             0x672a2f804be5c3d2,
             0x69b0926203e0d8b2,
             0x7870fd58bb208ac3,
@@ -450,7 +450,7 @@ pub const FROBENIUS_COEFF_FQ6_C1: [Fq2; 6] = [
         ]),
 
         // 0x169c69ad87060cd2f94b547d64e48b8eb2b3f55438c0bc3e38a1914bdb01e208918d3b6fbd6061efa04dc91e9dc401c5b0aa20a5bf27d84b
-        c1: Fq::from_raw([
+        c1: Fp::from_raw([
             0xb0aa20a5bf27d84b,
             0xa04dc91e9dc401c5,
             0x918d3b6fbd6061ef,
@@ -460,10 +460,10 @@ pub const FROBENIUS_COEFF_FQ6_C1: [Fq2; 6] = [
             0x169c69ad87060cd2,
         ]),
     },
-    // Fq2(v^3)**(((q^2) - 1) / 3)
-    Fq2 {
+    // Fp2(v^3)**(((p^2) - 1) / 3)
+    Fp2 {
         // 0x480000000000360001c950000d7ee0e4a803c956d01c903d720dc8ad8b38dffaf50c100004c37ffffffe
-        c0: Fq::from_raw([
+        c0: Fp::from_raw([
             0x100004c37ffffffe,
             0xc8ad8b38dffaf50c,
             0xc956d01c903d720d,
@@ -472,12 +472,12 @@ pub const FROBENIUS_COEFF_FQ6_C1: [Fq2; 6] = [
             0x0000000000004800,
             0x0000000000000000,
         ]),
-        c1: Fq::ZERO,
+        c1: Fp::ZERO,
     },
-    // Fq2(v^3)**(((q^3) - 1) / 3)
-    Fq2 {
+    // Fp2(v^3)**(((p^3) - 1) / 3)
+    Fp2 {
         // 0x1fdb6f538b54ca12ddd30422cf76537d2a39e3fc90d2f7c1b94fd59ed356516c03ee97d0838d20874b647fb3feaa9e1269546ccd30584139
-        c0: Fq::from_raw([
+        c0: Fp::from_raw([
             0x69546ccd30584139,
             0x4b647fb3feaa9e12,
             0x03ee97d0838d2087,
@@ -488,7 +488,7 @@ pub const FROBENIUS_COEFF_FQ6_C1: [Fq2; 6] = [
         ]),
 
         // 0x1c1612fc50dc8de03e08ba7d3bff3bbc8c0a66e2ad6fb668d641c9c0dec7251d2c3d56b69469165b567458d579b33ac78024a5443680656e
-        c1: Fq::from_raw([
+        c1: Fp::from_raw([
             0x8024a5443680656e,
             0x567458d579b33ac7,
             0x2c3d56b69469165b,
@@ -498,10 +498,10 @@ pub const FROBENIUS_COEFF_FQ6_C1: [Fq2; 6] = [
             0x1c1612fc50dc8de0,
         ]),
     },
-    // Fq2(v^3)**(((q^4) - 1) / 3)
-    Fq2 {
+    // Fp2(v^3)**(((p^4) - 1) / 3)
+    Fp2 {
         // 0x24000000000024000130e0000d7f28e4a803ca76be3924a5f43f8cddf9a5c4781b50d5e1ff708dc8d9fa5d8a200bc4398ffff80f80000002
-        c0: Fq::from_raw([
+        c0: Fp::from_raw([
             0x8ffff80f80000002,
             0xd9fa5d8a200bc439,
             0x1b50d5e1ff708dc8,
@@ -511,12 +511,12 @@ pub const FROBENIUS_COEFF_FQ6_C1: [Fq2; 6] = [
             0x2400000000002400,
         ]),
 
-        c1: Fq::ZERO,
+        c1: Fp::ZERO,
     },
-    // Fq2(v^3)**(((q^5) - 1) / 3)
-    Fq2 {
+    // Fp2(v^3)**(((p^5) - 1) / 3)
+    Fp2 {
         // 0x1e11e906b994badeb3a144b077e428508b37fc44ff5d740afb413cc1c491e8534cefb6d3e0ae5462903abf6ffd81fbc66f815d5883c1faf7
-        c0: Fq::from_raw([
+        c0: Fp::from_raw([
             0x6f815d5883c1faf7,
             0x903abf6ffd81fbc6,
             0x4cefb6d3e0ae5462,
@@ -527,7 +527,7 @@ pub const FROBENIUS_COEFF_FQ6_C1: [Fq2; 6] = [
         ]),
 
         // 0x154d8356281dad4ccb0db1057a1b1a7e114938b70241da37799bd9acfb4bd1d20b84b9d6cd9287624e8daf91e89635fe0f3133bc0a57c249
-        c1: Fq::from_raw([
+        c1: Fp::from_raw([
             0x0f3133bc0a57c249,
             0x4e8daf91e89635fe,
             0x0b84b9d6cd928762,
@@ -539,13 +539,13 @@ pub const FROBENIUS_COEFF_FQ6_C1: [Fq2; 6] = [
     },
 ];
 
-pub const FROBENIUS_COEFF_FQ6_C2: [Fq2; 6] = [
-    // Fq2(v^3)**(((2q^0) - 2) / 3)
-    Fq2::ONE,
-    // Fq2(v^3)**(((2q^1) - 2) / 3)
-    Fq2 {
+pub const FROBENIUS_COEFF_FP6_C2: [Fp2; 6] = [
+    // Fp2(v^3)**(((2p^0) - 2) / 3)
+    Fp2::ONE,
+    // Fp2(v^3)**(((2p^1) - 2) / 3)
+    Fp2 {
         // 0x1d51c23fcb1f9dae6458b6193a3766305bedb614a7feb8ec89f2de54da4204fe6832f879b2d457a239174d60a6247988fc8442b768993461
-        c0: Fq::from_raw([
+        c0: Fp::from_raw([
             0xfc8442b768993461,
             0x39174d60a6247988,
             0x6832f879b2d457a2,
@@ -556,7 +556,7 @@ pub const FROBENIUS_COEFF_FQ6_C2: [Fq2; 6] = [
         ]),
 
         // 0x1500a70695886e6cab571195c7d6000acb2b830a12825c2b4c494d816a5f107ce3393a7f8808224892191b8bc5a401e57acbf5e1ff7aa60d
-        c1: Fq::from_raw([
+        c1: Fp::from_raw([
             0x7acbf5e1ff7aa60d,
             0x92191b8bc5a401e5,
             0xe3393a7f88082248,
@@ -566,10 +566,10 @@ pub const FROBENIUS_COEFF_FQ6_C2: [Fq2; 6] = [
             0x1500a70695886e6c,
         ]),
     },
-    // Fq2(v^3)**(((2q^2) - 2) / 3)
-    Fq2 {
+    // Fp2(v^3)**(((2p^2) - 2) / 3)
+    Fp2 {
         // 0x24000000000024000130e0000d7f28e4a803ca76be3924a5f43f8cddf9a5c4781b50d5e1ff708dc8d9fa5d8a200bc4398ffff80f80000002
-        c0: Fq::from_raw([
+        c0: Fp::from_raw([
             0x8ffff80f80000002,
             0xd9fa5d8a200bc439,
             0x1b50d5e1ff708dc8,
@@ -578,12 +578,12 @@ pub const FROBENIUS_COEFF_FQ6_C2: [Fq2; 6] = [
             0x0130e0000d7f28e4,
             0x2400000000002400,
         ]),
-        c1: Fq::ZERO,
+        c1: Fp::ZERO,
     },
-    // Fq2(v^3)**(((2q^3) - 2) / 3)
-    Fq2 {
+    // Fp2(v^3)**(((2p^3) - 2) / 3)
+    Fp2 {
         // 0x120be5e275b7740b992ac11ed87340811340a18ffdae8c5a75a401e1859b4c46081d3ffa689cca53b3084b8347191c1df788b62181838924
-        c0: Fq::from_raw([
+        c0: Fp::from_raw([
             0xf788b62181838924,
             0xb3084b8347191c1d,
             0x081d3ffa689cca53,
@@ -593,7 +593,7 @@ pub const FROBENIUS_COEFF_FQ6_C2: [Fq2; 6] = [
             0x120be5e275b7740b,
         ]),
         //0xf64268ae9d89108841b2e2044b239b513e060979a5412ff8a3b20a3c8faec3a4b83661cd06f3f91e511eb36374fe08bf6cc480f091b565
-        c1: Fq::from_raw([
+        c1: Fp::from_raw([
             0xbf6cc480f091b565,
             0x1e511eb36374fe08,
             0xa4b83661cd06f3f9,
@@ -603,10 +603,10 @@ pub const FROBENIUS_COEFF_FQ6_C2: [Fq2; 6] = [
             0x00f64268ae9d8910,
         ]),
     },
-    // Fq2(v^3)**(((2q^4) - 2) / 3)
-    Fq2 {
+    // Fp2(v^3)**(((2p^4) - 2) / 3)
+    Fp2 {
         // 0x480000000000360001c950000d7ee0e4a803c956d01c903d720dc8ad8b38dffaf50c100004c37ffffffe
-        c0: Fq::from_raw([
+        c0: Fp::from_raw([
             0x100004c37ffffffe,
             0xc8ad8b38dffaf50c,
             0xc956d01c903d720d,
@@ -615,12 +615,12 @@ pub const FROBENIUS_COEFF_FQ6_C2: [Fq2; 6] = [
             0x0000000000004800,
             0x0000000000000000,
         ]),
-        c1: Fq::ZERO,
+        c1: Fp::ZERO,
     },
-    // Fq2(v^3)**(((2q^5) - 2) / 3)
-    Fq2 {
+    // Fp2(v^3)**(((2p^5) - 2) / 3)
+    Fp2 {
         //0x18a257ddbf29364604de48c808543b17e0d93d4942c5079788e85483553787b358ff138903eaddb7593038a212cfdce44bf300cd15e3427d
-        c0: Fq::from_raw([
+        c0: Fp::from_raw([
             0x4bf300cd15e3427d,
             0x593038a212cfdce4,
             0x58ff138903eaddb7,
@@ -630,7 +630,7 @@ pub const FROBENIUS_COEFF_FQ6_C2: [Fq2; 6] = [
             0x18a257ddbf293646,
         ]),
 
-        c1: Fq::from_raw(
+        c1: Fp::from_raw(
             // 0xe091690bbda2c82cd981b88415e4d3e8b9a416368118913ff529ad1339bad3b5cb6351d3a9ee994f23dae83d6edb95765c742700ff3a48f
             [
                 0x65c742700ff3a48f,
@@ -651,20 +651,20 @@ use rand::SeedableRng;
 use rand_xorshift::XorShiftRng;
 
 #[test]
-fn test_fq6_mul_nonresidue() {
+fn test_fp6_mul_nonresidue() {
     let mut rng = XorShiftRng::from_seed([
         0x59, 0x62, 0xbe, 0x5d, 0x76, 0x3d, 0x31, 0x8d, 0x17, 0xdb, 0x37, 0x32, 0x54, 0x06, 0xbc,
         0xe5,
     ]);
 
-    let nqr = Fq6 {
-        c0: Fq2::zero(),
-        c1: Fq2::one(),
-        c2: Fq2::zero(),
+    let nqr = Fp6 {
+        c0: Fp2::zero(),
+        c1: Fp2::one(),
+        c2: Fp2::zero(),
     };
 
     for _ in 0..1000 {
-        let mut a = Fq6::random(&mut rng);
+        let mut a = Fp6::random(&mut rng);
         let mut b = a;
         a.mul_by_nonresidue();
         b.mul_assign(&nqr);
@@ -674,22 +674,22 @@ fn test_fq6_mul_nonresidue() {
 }
 
 #[test]
-fn test_fq6_mul_by_1() {
+fn test_fp6_mul_by_1() {
     let mut rng = XorShiftRng::from_seed([
         0x59, 0x62, 0xbe, 0x5d, 0x76, 0x3d, 0x31, 0x8d, 0x17, 0xdb, 0x37, 0x32, 0x54, 0x06, 0xbc,
         0xe5,
     ]);
 
     for _ in 0..1000 {
-        let c1 = Fq2::random(&mut rng);
-        let mut a = Fq6::random(&mut rng);
+        let c1 = Fp2::random(&mut rng);
+        let mut a = Fp6::random(&mut rng);
         let mut b = a;
 
         a.mul_by_1(&c1);
-        b.mul_assign(&Fq6 {
-            c0: Fq2::zero(),
+        b.mul_assign(&Fp6 {
+            c0: Fp2::zero(),
             c1,
-            c2: Fq2::zero(),
+            c2: Fp2::zero(),
         });
 
         assert_eq!(a, b);
@@ -697,23 +697,23 @@ fn test_fq6_mul_by_1() {
 }
 
 #[test]
-fn test_fq6_mul_by_01() {
+fn test_fp6_mul_by_01() {
     let mut rng = XorShiftRng::from_seed([
         0x59, 0x62, 0xbe, 0x5d, 0x76, 0x3d, 0x31, 0x8d, 0x17, 0xdb, 0x37, 0x32, 0x54, 0x06, 0xbc,
         0xe5,
     ]);
 
     for _ in 0..1000 {
-        let c0 = Fq2::random(&mut rng);
-        let c1 = Fq2::random(&mut rng);
-        let mut a = Fq6::random(&mut rng);
+        let c0 = Fp2::random(&mut rng);
+        let c1 = Fp2::random(&mut rng);
+        let mut a = Fp6::random(&mut rng);
         let mut b = a;
 
         a.mul_by_01(&c0, &c1);
-        b.mul_assign(&Fq6 {
+        b.mul_assign(&Fp6 {
             c0,
             c1,
-            c2: Fq2::zero(),
+            c2: Fp2::zero(),
         });
 
         assert_eq!(a, b);
@@ -728,7 +728,7 @@ fn test_squaring() {
     ]);
 
     for _ in 0..1000 {
-        let mut a = Fq6::random(&mut rng);
+        let mut a = Fp6::random(&mut rng);
         let mut b = a;
         b.mul_assign(&a);
         a.square_assign();
@@ -745,12 +745,12 @@ fn test_frobenius() {
 
     for _ in 0..50 {
         for i in 0..8 {
-            let mut a = Fq6::random(&mut rng);
+            let mut a = Fp6::random(&mut rng);
             let mut b = a;
 
             for _ in 0..i {
                 a = a.pow_vartime(&[
-                    // q
+                    // p
                     0x9ffffcd300000001,
                     0xa2a7e8c30006b945,
                     0xe4a7a5fe8fadffd6,
@@ -769,5 +769,5 @@ fn test_frobenius() {
 
 #[test]
 fn test_field() {
-    crate::tests::field::random_field_tests::<Fq6>("fq6".to_string());
+    crate::tests::field::random_field_tests::<Fp6>("fp6".to_string());
 }

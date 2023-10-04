@@ -1,4 +1,4 @@
-use super::fields::{fp::Fp, fq::Fq, fq2::Fq2};
+use super::fields::{fp::Fp, fp2::Fp2, fq::Fq};
 use crate::ff::WithSmallOrderMulGroup;
 use crate::ff::{Field, PrimeField};
 use crate::group::{prime::PrimeCurveAffine, Curve, Group as _, GroupEncoding};
@@ -20,7 +20,7 @@ use crate::{
     new_curve_impl,
 };
 
-const PLUTO_GENERATOR_X: Fq = Fq::from_raw([
+const PLUTO_GENERATOR_X: Fp = Fp::from_raw([
     0x9ffffcd2ffffffff,
     0xa2a7e8c30006b945,
     0xe4a7a5fe8fadffd6,
@@ -29,7 +29,7 @@ const PLUTO_GENERATOR_X: Fq = Fq::from_raw([
     0x0130e0000d7f70e4,
     0x2400000000002400,
 ]);
-const PLUTO_GENERATOR_Y: Fq = Fq::from_raw([
+const PLUTO_GENERATOR_Y: Fp = Fp::from_raw([
     0x0000000000000007,
     0x0000000000000000,
     0x0000000000000000,
@@ -39,9 +39,9 @@ const PLUTO_GENERATOR_Y: Fq = Fq::from_raw([
     0x0000000000000000,
 ]);
 
-const PLUTO_B: Fq = Fq::from_raw([0x39, 0, 0, 0, 0, 0, 0]);
+const PLUTO_B: Fp = Fp::from_raw([0x39, 0, 0, 0, 0, 0, 0]);
 
-const ERIS_GENERATOR_X: Fp = Fp::from_raw([
+const ERIS_GENERATOR_X: Fq = Fq::from_raw([
     0x1ffffcd2ffffffff,
     0x9ca7e85d60050af4,
     0xe4a775fe8e177fd6,
@@ -50,7 +50,7 @@ const ERIS_GENERATOR_X: Fp = Fp::from_raw([
     0x0130e0000d7f70e4,
     0x2400000000002400,
 ]);
-const ERIS_GENERATOR_Y: Fp = Fp::from_raw([
+const ERIS_GENERATOR_Y: Fq = Fq::from_raw([
     0x0000000000000007,
     0x0000000000000000,
     0x0000000000000000,
@@ -60,11 +60,11 @@ const ERIS_GENERATOR_Y: Fp = Fp::from_raw([
     0x0000000000000000,
 ]);
 
-const ERIS_B: Fp = Fp::from_raw([0x39, 0, 0, 0, 0, 0, 0]);
+const ERIS_B: Fq = Fq::from_raw([0x39, 0, 0, 0, 0, 0, 0]);
 
-const TRITON_GENERATOR_X: Fq2 = Fq2 {
+const TRITON_GENERATOR_X: Fp2 = Fp2 {
     // 0x13576c81faf3a13fd815d0e9bd54b845ee935948b84498b27ca972bfb93722e223c9e276a4ebe7559cfc86dd865f07d64f2b5fe6556f9066
-    c0: Fq::from_raw([
+    c0: Fp::from_raw([
         0x4f2b5fe6556f9066,
         0x9cfc86dd865f07d6,
         0x23c9e276a4ebe755,
@@ -75,7 +75,7 @@ const TRITON_GENERATOR_X: Fq2 = Fq2 {
     ]),
 
     //0x142164cb875db0465e5092f9380f44f555243d011699b7393029f2d201554727aeb383298fdf5847b9b3dff01bbe8d63fe7c781a8fd7bf21
-    c1: Fq::from_raw([
+    c1: Fp::from_raw([
         0xfe7c781a8fd7bf21,
         0xb9b3dff01bbe8d63,
         0xaeb383298fdf5847,
@@ -85,9 +85,9 @@ const TRITON_GENERATOR_X: Fq2 = Fq2 {
         0x142164cb875db046,
     ]),
 };
-const TRITON_GENERATOR_Y: Fq2 = Fq2 {
+const TRITON_GENERATOR_Y: Fp2 = Fp2 {
     //0x2239f7408ead478c58e88d4df1e7418c42fdbb92e64ba85aa4dc17d7dace3f32eb471c004db774bfe78574aca67b3898cd1b78ad106ab9fe
-    c0: Fq::from_raw([
+    c0: Fp::from_raw([
         0xcd1b78ad106ab9fe,
         0xe78574aca67b3898,
         0xeb471c004db774bf,
@@ -98,7 +98,7 @@ const TRITON_GENERATOR_Y: Fq2 = Fq2 {
     ]),
 
     // 0x1260b04d51136590dbb53dfd7caf450aeca714555bbe4f079ca65d97eb28fc9fc697b4e10bbcd9e0539ef82a731fb88ed49e3c080e6d945d
-    c1: Fq::from_raw([
+    c1: Fp::from_raw([
         0xd49e3c080e6d945d,
         0x539ef82a731fb88e,
         0xc697b4e10bbcd9e0,
@@ -110,9 +110,9 @@ const TRITON_GENERATOR_Y: Fq2 = Fq2 {
 };
 
 // u + 3
-const TRITON_B: Fq2 = Fq2 {
-    c0: Fq::from_raw([0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
-    c1: Fq::ONE,
+const TRITON_B: Fp2 = Fp2 {
+    c0: Fp::from_raw([0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
+    c1: Fp::ONE,
 };
 
 impl group::cofactor::CofactorGroup for Pluto {
@@ -136,8 +136,8 @@ new_curve_impl!(
     Pluto,
     PlutoAffine,
     false,
-    Fq,
     Fp,
+    Fq,
     (PLUTO_GENERATOR_X,PLUTO_GENERATOR_Y),
     PLUTO_B,
     "pluto",
@@ -164,8 +164,8 @@ new_curve_impl!(
     Eris,
     ErisAffine,
     false,
-    Fp,
     Fq,
+    Fp,
     (ERIS_GENERATOR_X,ERIS_GENERATOR_Y),
     ERIS_B,
     "eris",
@@ -175,7 +175,7 @@ impl CofactorGroup for Triton {
     type Subgroup = Triton;
 
     fn clear_cofactor(&self) -> Self {
-        // cofactor = 2*q - p
+        // cofactor = 2*p - q
         //0x24000000000024000130e0000d7f70e4a803ca76f439266f443f9a5d3a8a6c7be4a7d5fe91447fd6a8a7e928a00867971ffffcd300000001
         let e: [u8; 56] = [
             0x24, 0x00, 0x00, 0x00, 0x00, 0x00, 0x24, 0x00, 0x01, 0x30, 0xe0, 0x00, 0x0d, 0x7f,
@@ -228,8 +228,8 @@ new_curve_impl!(
     Triton,
     TritonAffine,
     false,
-    Fq2,
-    Fp,
+    Fp2,
+    Fq,
     (TRITON_GENERATOR_X,TRITON_GENERATOR_Y),
     TRITON_B,
     "triton",
@@ -264,11 +264,11 @@ fn test_serialization() {
 #[test]
 fn test_endo_consistency() {
     let g = Eris::generator();
-    assert_eq!(g * Fq::ZETA, g.endo());
+    assert_eq!(g * Fp::ZETA, g.endo());
 
     let g = Pluto::generator();
-    assert_eq!(g * Fp::ZETA, g.endo());
+    assert_eq!(g * Fq::ZETA, g.endo());
 
     let g = Triton::generator();
-    assert_eq!(g * Fp::ZETA, g.endo());
+    assert_eq!(g * Fq::ZETA, g.endo());
 }
