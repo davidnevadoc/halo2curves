@@ -1,15 +1,18 @@
 #![cfg_attr(feature = "asm", feature(asm_const))]
 
 mod arithmetic;
+pub mod fft;
+pub mod msm;
+pub mod multicore;
+#[macro_use]
+pub mod legendre;
+pub mod serde;
 
 pub mod bn256;
 pub mod pairing;
 pub mod pasta;
 pub mod pluto_eris;
 pub mod secp256k1;
-pub mod serde;
-#[macro_use]
-pub mod legendre;
 
 #[macro_use]
 mod derive;
