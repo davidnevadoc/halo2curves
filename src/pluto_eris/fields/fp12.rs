@@ -331,64 +331,62 @@ pub const FROBENIUS_COEFF_FP12_C1: [Fp2; 12] = [
     Fp2::ONE,
     // Fp2(v)**(((p^1) - 1) / 6)
     Fp2 {
-        // 0x1b753f8b1c790596306643e8d56a36e8a2ab4f2aaaed2b24e4982068bdf5e6fa81754882f0b9fea9ae5247e985509a8faefbc19a0ebb9c80
+        // 0x3c3ad3da8b99cb1df0709dc343113ccd9892dedd51f30695d89c647b90de8f41df055384b9e6cfd4e70648622c750f32ee965dfef2303d3
         c0: Fp::from_raw([
-            0xaefbc19a0ebb9c80,
-            0xae5247e985509a8f,
-            0x81754882f0b9fea9,
-            0xe4982068bdf5e6fa,
-            0xa2ab4f2aaaed2b24,
-            0x306643e8d56a36e8,
-            0x1b753f8b1c790596,
+            0x2ee965dfef2303d3,
+            0x4e70648622c750f3,
+            0x1df055384b9e6cfd,
+            0x5d89c647b90de8f4,
+            0xd9892dedd51f3069,
+            0xdf0709dc343113cc,
+            0x03c3ad3da8b99cb1,
         ]),
-
-        // 0x39a53badefef2817c8f793c5b3d3d674964841b3cf9e8921fde920acb190ffde389f817427cbd34d576f049a35a7126f4bee638825d52d
+        // 0x149fd9ed2c7affe7aaa3b912182da22dccb29838628f04b6f333d052540294889f03876b2ddb143559f9373f4cf44e6afa0be24ad758a5ff
         c1: Fp::from_raw([
-            0x6f4bee638825d52d,
-            0x4d576f049a35a712,
-            0xde389f817427cbd3,
-            0x21fde920acb190ff,
-            0x74964841b3cf9e89,
-            0x17c8f793c5b3d3d6,
-            0x0039a53badefef28,
+            0xfa0be24ad758a5ff,
+            0x59f9373f4cf44e6a,
+            0x9f03876b2ddb1435,
+            0xf333d05254029488,
+            0xccb29838628f04b6,
+            0xaaa3b912182da22d,
+            0x149fd9ed2c7affe7,
         ]),
     },
     // Fp2(v)**(((p^2) - 1) / 6)
     Fp2 {
-        // 0x24000000000024000130e0000d7f28e4a803ca76be3924a5f43f8cddf9a5c4781b50d5e1ff708dc8d9fa5d8a200bc4398ffff80f80000002
+        // 0x480000000000360001c950000d7ee0e4a803c956d01c903d720dc8ad8b38dffaf50c100004c37fffffff
         c0: Fp::from_raw([
-            0x8ffff80f80000002,
-            0xd9fa5d8a200bc439,
-            0x1b50d5e1ff708dc8,
-            0xf43f8cddf9a5c478,
-            0xa803ca76be3924a5,
-            0x0130e0000d7f28e4,
-            0x2400000000002400,
+            0x100004c37fffffff,
+            0xc8ad8b38dffaf50c,
+            0xc956d01c903d720d,
+            0x50000d7ee0e4a803,
+            0x00000000360001c9,
+            0x0000000000004800,
+            0x0000000000000000,
         ]),
         c1: Fp::ZERO,
     },
     // Fp2(v)**(((p^3) - 1) / 6)
     Fp2 {
-        // 0x199280177f37106928d7340ed9afd69177eabe26c082e02d94386c823bbd0793471c80a54a510f935dd43eebcbb8f8958f5a203e3a9b283c
+        // 0x1baee9e044d94d205764b80089c40010af5ca1e56a2a81e6a5d8739325984fc889d390efef216fe4f4af912a897f60a128a3be71be4995ca
         c0: Fp::from_raw([
-            0x8f5a203e3a9b283c,
-            0x5dd43eebcbb8f895,
-            0x471c80a54a510f93,
-            0x94386c823bbd0793,
-            0x77eabe26c082e02d,
-            0x28d7340ed9afd691,
-            0x199280177f371069,
+            0x28a3be71be4995ca,
+            0xf4af912a897f60a1,
+            0x89d390efef216fe4,
+            0xa5d8739325984fc8,
+            0xaf5ca1e56a2a81e6,
+            0x5764b80089c40010,
+            0x1baee9e044d94d20,
         ]),
-
-        // 0x1d57dc6eb9af4c9bc8a17db46d26ee52161a3b40a3e6218677467860304c33e21ecdc1bf397519bf52c465ca50b05be07889e7c734730407
+        // 0x20d4c11700e832829b26f1795339413be65e47a7716bc8bc07cd6b44b03ef1130b3c35a77291b29d6f45d28e4ef1ecb9678f4479a1151232
         c1: Fp::from_raw([
-            0x7889e7c734730407,
-            0x52c465ca50b05be0,
-            0x1ecdc1bf397519bf,
-            0x77467860304c33e2,
-            0x161a3b40a3e62186,
-            0xc8a17db46d26ee52,
-            0x1d57dc6eb9af4c9b,
+            0x678f4479a1151232,
+            0x6f45d28e4ef1ecb9,
+            0x0b3c35a77291b29d,
+            0x07cd6b44b03ef113,
+            0xe65e47a7716bc8bc,
+            0x9b26f1795339413b,
+            0x20d4c11700e83282,
         ]),
     },
     // Fp2(v)**(((p^4) - 1) / 6)
@@ -407,52 +405,62 @@ pub const FROBENIUS_COEFF_FP12_C1: [Fp2; 12] = [
     },
     // Fp2(v)**(((p^5) - 1) / 6)
     Fp2 {
-        // 0x12f8405d64503200a92448086be4d44f3571879c7d02418c0faea7cebb61ea6a00bd82d4e450f17039294ab0af03df6601aa17cdb6a93b46
+        // 0x17eb3ca29c1fb06e785dae245592ec43d5d373f7950b517d484ead4b6c8a66d46be33bb7a38302e7a63f2ca466b80fadf9ba5891cf2691f7
         c0: Fp::from_raw([
-            0x01aa17cdb6a93b46,
-            0x39294ab0af03df66,
-            0x00bd82d4e450f170,
-            0x0faea7cebb61ea6a,
-            0x3571879c7d02418c,
-            0xa92448086be4d44f,
-            0x12f8405d64503200,
+            0xf9ba5891cf2691f7,
+            0xa63f2ca466b80fad,
+            0x6be33bb7a38302e7,
+            0x484ead4b6c8a66d4,
+            0xd5d373f7950b517d,
+            0x785dae245592ec43,
+            0x17eb3ca29c1fb06e,
         ]),
-
-        // 0x66e7e559860e83c20c66ab7daa4aebc1d5346f49c83665faafb38dbfd8ca799e7a144bde2111a44028c13f41520b652b82a26a8436726cd
+        // 0xc34e729d46d329af08338673b0b9f0e19abaf6f0edcc40514999af25c3c5c8a6c38ae3c44b69e68154c9b4f01fd9e4e6d83622ec9bc6c33
         c1: Fp::from_raw([
-            0xb82a26a8436726cd,
-            0x028c13f41520b652,
-            0xe7a144bde2111a44,
-            0xaafb38dbfd8ca799,
-            0x1d5346f49c83665f,
-            0x20c66ab7daa4aebc,
-            0x066e7e559860e83c,
+            0x6d83622ec9bc6c33,
+            0x154c9b4f01fd9e4e,
+            0x6c38ae3c44b69e68,
+            0x14999af25c3c5c8a,
+            0x19abaf6f0edcc405,
+            0xf08338673b0b9f0e,
+            0x0c34e729d46d329a,
         ]),
     },
     // Fp2(v)**(((p^6) - 1) / 6)
-    Fp2::ONE,
+    Fp2 {
+        // 0x24000000000024000130e0000d7f70e4a803ca76f439266f443f9a5cda8a6c7be4a7a5fe8fadffd6a2a7e8c30006b9459ffffcd300000000
+        c0: Fp::from_raw([
+            0x9ffffcd300000000,
+            0xa2a7e8c30006b945,
+            0xe4a7a5fe8fadffd6,
+            0x443f9a5cda8a6c7b,
+            0xa803ca76f439266f,
+            0x0130e0000d7f70e4,
+            0x2400000000002400,
+        ]),
+        c1: Fp::ZERO,
+    },
     // Fp2(v)**(((p^7) - 1) / 6)
     Fp2 {
-        // 0x1b753f8b1c790596306643e8d56a36e8a2ab4f2aaaed2b24e4982068bdf5e6fa81754882f0b9fea9ae5247e985509a8faefbc19a0ebb9c80
+        // 0x203c52c25746874e2229d623d94e5d17ce7a9c891f19f605e6b5d415217c8387c6b750c6440f92d95437843cdd3f6852711696f310dcfc2e
         c0: Fp::from_raw([
-            0xaefbc19a0ebb9c80,
-            0xae5247e985509a8f,
-            0x81754882f0b9fea9,
-            0xe4982068bdf5e6fa,
-            0xa2ab4f2aaaed2b24,
-            0x306643e8d56a36e8,
-            0x1b753f8b1c790596,
+            0x711696f310dcfc2e,
+            0x5437843cdd3f6852,
+            0xc6b750c6440f92d9,
+            0xe6b5d415217c8387,
+            0xce7a9c891f19f605,
+            0x2229d623d94e5d17,
+            0x203c52c25746874e,
         ]),
-
-        // 0x39a53badefef2817c8f793c5b3d3d674964841b3cf9e8921fde920acb190ffde389f817427cbd34d576f049a35a7126f4bee638825d52d
+        // 0xf602612d3852418568d26edf551ceb6db51323e91aa21b8510bca0a8687d7f345a41e9361d2eba148aeb183b3126adaa5f41a8828a75a02
         c1: Fp::from_raw([
-            0x6f4bee638825d52d,
-            0x4d576f049a35a712,
-            0xde389f817427cbd3,
-            0x21fde920acb190ff,
-            0x74964841b3cf9e89,
-            0x17c8f793c5b3d3d6,
-            0x0039a53badefef28,
+            0xa5f41a8828a75a02,
+            0x48aeb183b3126ada,
+            0x45a41e9361d2eba1,
+            0x510bca0a8687d7f3,
+            0xdb51323e91aa21b8,
+            0x568d26edf551ceb6,
+            0x0f602612d3852418,
         ]),
     },
     // Fp2(v)**(((p^8) - 1) / 6)
@@ -471,64 +479,62 @@ pub const FROBENIUS_COEFF_FP12_C1: [Fp2; 12] = [
     },
     // Fp2(v)**(((p^9) - 1) / 6)
     Fp2 {
-        //0x199280177f37106928d7340ed9afd69177eabe26c082e02d94386c823bbd0793471c80a54a510f935dd43eebcbb8f8958f5a203e3a9b283c
+        // 0x851161fbb26d6dfa9cc27ff83bb70d3f8a728918a0ea4889e6726c9b4f21cb35ad4150ea08c8ff1adf85798768758a4775c3e6141b66a37
         c0: Fp::from_raw([
-            0x8f5a203e3a9b283c,
-            0x5dd43eebcbb8f895,
-            0x471c80a54a510f93,
-            0x94386c823bbd0793,
-            0x77eabe26c082e02d,
-            0x28d7340ed9afd691,
-            0x199280177f371069,
+            0x775c3e6141b66a37,
+            0xadf85798768758a4,
+            0x5ad4150ea08c8ff1,
+            0x9e6726c9b4f21cb3,
+            0xf8a728918a0ea488,
+            0xa9cc27ff83bb70d3,
+            0x0851161fbb26d6df,
         ]),
-
-        // 0x1d57dc6eb9af4c9bc8a17db46d26ee52161a3b40a3e6218677467860304c33e21ecdc1bf397519bf52c465ca50b05be07889e7c734730407
+        // 0x32b3ee8ff17f17d6609ee86ba462fa8c1a582cf82cd5db33c722f182a4b7b68d96b70571d1c4d3933621634b114cc8c3870b8595eeaedcf
         c1: Fp::from_raw([
-            0x7889e7c734730407,
-            0x52c465ca50b05be0,
-            0x1ecdc1bf397519bf,
-            0x77467860304c33e2,
-            0x161a3b40a3e62186,
-            0xc8a17db46d26ee52,
-            0x1d57dc6eb9af4c9b,
+            0x3870b8595eeaedcf,
+            0x33621634b114cc8c,
+            0xd96b70571d1c4d39,
+            0x3c722f182a4b7b68,
+            0xc1a582cf82cd5db3,
+            0x6609ee86ba462fa8,
+            0x032b3ee8ff17f17d,
         ]),
     },
     // Fp2(v)**(((p^10) - 1) / 6)
     Fp2 {
-        // 0x480000000000360001c950000d7ee0e4a803c956d01c903d720dc8ad8b38dffaf50c100004c37ffffffe
+        // 0x24000000000024000130e0000d7f28e4a803ca76be3924a5f43f8cddf9a5c4781b50d5e1ff708dc8d9fa5d8a200bc4398ffff80f80000003
         c0: Fp::from_raw([
-            0x100004c37ffffffe,
-            0xc8ad8b38dffaf50c,
-            0xc956d01c903d720d,
-            0x50000d7ee0e4a803,
-            0x00000000360001c9,
-            0x0000000000004800,
-            0x0000000000000000,
+            0x8ffff80f80000003,
+            0xd9fa5d8a200bc439,
+            0x1b50d5e1ff708dc8,
+            0xf43f8cddf9a5c478,
+            0xa803ca76be3924a5,
+            0x0130e0000d7f28e4,
+            0x2400000000002400,
         ]),
         c1: Fp::ZERO,
     },
     // Fp2(v)**(((p^11) - 1) / 6)
     Fp2 {
-        // 0x12f8405d64503200a92448086be4d44f3571879c7d02418c0faea7cebb61ea6a00bd82d4e450f17039294ab0af03df6601aa17cdb6a93b46
+        // 0xc14c35d63e0739188d331dbb7ec84a0d230567f5f2dd4f1fbf0ed116e0005a778c46a46ec2afceefc68bc1e994ea997a645a44130d96e0a
         c0: Fp::from_raw([
-            0x01aa17cdb6a93b46,
-            0x39294ab0af03df66,
-            0x00bd82d4e450f170,
-            0x0faea7cebb61ea6a,
-            0x3571879c7d02418c,
-            0xa92448086be4d44f,
-            0x12f8405d64503200,
+            0xa645a44130d96e0a,
+            0xfc68bc1e994ea997,
+            0x78c46a46ec2afcee,
+            0xfbf0ed116e0005a7,
+            0xd230567f5f2dd4f1,
+            0x88d331dbb7ec84a0,
+            0x0c14c35d63e07391,
         ]),
-
-        // 0x66e7e559860e83c20c66ab7daa4aebc1d5346f49c83665faafb38dbfd8ca799e7a144bde2111a44028c13f41520b652b82a26a8436726cd
+        // 0x17cb18d62b92f16510ada798d273d1d68e581b07e55c626a2fa5ff6a7e4e0ff1786ef7c24af7616e8d5b4d73fe091af7327c9aa4364393ce
         c1: Fp::from_raw([
-            0xb82a26a8436726cd,
-            0x028c13f41520b652,
-            0xe7a144bde2111a44,
-            0xaafb38dbfd8ca799,
-            0x1d5346f49c83665f,
-            0x20c66ab7daa4aebc,
-            0x066e7e559860e83c,
+            0x327c9aa4364393ce,
+            0x8d5b4d73fe091af7,
+            0x786ef7c24af7616e,
+            0x2fa5ff6a7e4e0ff1,
+            0x8e581b07e55c626a,
+            0x10ada798d273d1d6,
+            0x17cb18d62b92f165,
         ]),
     },
 ];

@@ -284,15 +284,16 @@ impl Fp2 {
         }
     }
 
-    /// Multiply this element by cubic nonresidue: u+2
+    /// Multiply this element by cubic nonresidue: V_CUBE = 57/(u+3)
     pub fn mul_by_nonresidue(&mut self) {
-        // (x + y * u)(u + 2) = (2*x + u_square * y) + u (x + 2y)
+        // (x + y * u) * 57/(u + 3)
+        self.mul_assign(&super::fp6::V_CUBE)
 
-        let t0 = self.c0;
-        let t1 = self.c1;
+        // let t0 = self.c0;
+        // let t1 = self.c1;
 
-        self.c0 = t0.double() + U_SQUARE * t1;
-        self.c1 = t1.double() + t0;
+        // self.c0 = t0.double() + U_SQUARE * t1;
+        // self.c1 = t1.double() + t0;
     }
 
     pub fn invert(&self) -> CtOption<Self> {

@@ -7,9 +7,31 @@ use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
 
 /// -BETA is a cubic non-residue in Fp2. Fp6 = Fp2[X]/(X^3 + BETA)
 /// We introduce the variable v such that v^3 = -ALPHA
-// BETA = - (u+2)
+// BETA = - 57/(z+3)
 
-// V_CUBE = u + 2
+// V_CUBE = 57/(u+3)
+pub(crate) const V_CUBE: Fp2 = Fp2 {
+    // 0xcdb6db6db6dc3b6dbda9924971b3a9ace4a7f2a7bcb449573cd928ee056022c3f6072240ebe2483833bf7b35b701d98ddb6da4b5b6db6e8
+    c0: Fp::from_raw([
+        0xddb6da4b5b6db6e8,
+        0x833bf7b35b701d98,
+        0x3f6072240ebe2483,
+        0x73cd928ee056022c,
+        0xce4a7f2a7bcb4495,
+        0xdbda9924971b3a9a,
+        0x0cdb6db6db6dc3b6,
+    ]),
+    // 0x7b6db6db6db756db71cc2492776bcc3489319197d79f5f3457b57ef5366ce1a8c6d1148d5a5491bb523fb0536dcde8eeb6db62d36db6db3
+    c1: Fp::from_raw([
+        0xeb6db62d36db6db3,
+        0xb523fb0536dcde8e,
+        0x8c6d1148d5a5491b,
+        0x457b57ef5366ce1a,
+        0x489319197d79f5f3,
+        0xb71cc2492776bcc3,
+        0x07b6db6db6db756d,
+    ]),
+};
 // const V_CUBE: Fp2 = Fp2 {
 //     c0: Fp::from_raw([0x02, 0, 0, 0, 0, 0, 0]),
 //     c1: Fp::from_raw([0x01, 0, 0, 0, 0, 0, 0]),
@@ -438,26 +460,25 @@ pub const FROBENIUS_COEFF_FP6_C1: [Fp2; 6] = [
     Fp2::ONE,
     // Fp2(v^3)**(((p^1) - 1) / 3)
     Fp2 {
-        // 0xa12a7a5bb16c30e70ed772cd3a465fb9a95b4ac5841e111d3ee22591d2c9f387870fd58bb208ac369b0926203e0d8b2672a2f804be5c3d2
+        // 0x120de97f024c55bc3bc0d351f4c70da1e3886170077a50986f93678bc921dcd5041bc4bb14cc42dc52e787634eccc335a001825382850d03
         c0: Fp::from_raw([
-            0x672a2f804be5c3d2,
-            0x69b0926203e0d8b2,
-            0x7870fd58bb208ac3,
-            0xd3ee22591d2c9f38,
-            0x9a95b4ac5841e111,
-            0x70ed772cd3a465fb,
-            0x0a12a7a5bb16c30e,
+            0xa001825382850d03,
+            0x52e787634eccc335,
+            0x041bc4bb14cc42dc,
+            0x6f93678bc921dcd5,
+            0xe3886170077a5098,
+            0x3bc0d351f4c70da1,
+            0x120de97f024c55bc,
         ]),
-
-        // 0x169c69ad87060cd2f94b547d64e48b8eb2b3f55438c0bc3e38a1914bdb01e208918d3b6fbd6061efa04dc91e9dc401c5b0aa20a5bf27d84b
+        // 0x2096f3f804d973afd82becc2ef081b76132461908eadbe3da1a7f5502b7091965efa1ddf4658080413be1b7cd3c9ea0e2772fea378a9b322
         c1: Fp::from_raw([
-            0xb0aa20a5bf27d84b,
-            0xa04dc91e9dc401c5,
-            0x918d3b6fbd6061ef,
-            0x38a1914bdb01e208,
-            0xb2b3f55438c0bc3e,
-            0xf94b547d64e48b8e,
-            0x169c69ad87060cd2,
+            0x2772fea378a9b322,
+            0x13be1b7cd3c9ea0e,
+            0x5efa1ddf46580804,
+            0xa1a7f5502b709196,
+            0x132461908eadbe3d,
+            0xd82becc2ef081b76,
+            0x2096f3f804d973af,
         ]),
     },
     // Fp2(v^3)**(((p^2) - 1) / 3)
@@ -476,26 +497,25 @@ pub const FROBENIUS_COEFF_FP6_C1: [Fp2; 6] = [
     },
     // Fp2(v^3)**(((p^3) - 1) / 3)
     Fp2 {
-        // 0x1fdb6f538b54ca12ddd30422cf76537d2a39e3fc90d2f7c1b94fd59ed356516c03ee97d0838d20874b647fb3feaa9e1269546ccd30584139
+        // 0x1f9cd069c59f50a72511749de232911d833b798e78bd98c02913e38315a71c287cd52ae30d09b78a8b43b17b4c3ea938a04518fa783eb497
         c0: Fp::from_raw([
-            0x69546ccd30584139,
-            0x4b647fb3feaa9e12,
-            0x03ee97d0838d2087,
-            0xb94fd59ed356516c,
-            0x2a39e3fc90d2f7c1,
-            0xddd30422cf76537d,
-            0x1fdb6f538b54ca12,
+            0xa04518fa783eb497,
+            0x8b43b17b4c3ea938,
+            0x7cd52ae30d09b78a,
+            0x2913e38315a71c28,
+            0x833b798e78bd98c0,
+            0x2511749de232911d,
+            0x1f9cd069c59f50a7,
         ]),
-
-        // 0x1c1612fc50dc8de03e08ba7d3bff3bbc8c0a66e2ad6fb668d641c9c0dec7251d2c3d56b69469165b567458d579b33ac78024a5443680656e
+        // 0x23affd628747cbaec26943f93dc9eab63f4af36699fe6d74c0aa2122aa7cb689e8faacb3479a973a4a728fcb77b150ee77240d4066e42ac5
         c1: Fp::from_raw([
-            0x8024a5443680656e,
-            0x567458d579b33ac7,
-            0x2c3d56b69469165b,
-            0xd641c9c0dec7251d,
-            0x8c0a66e2ad6fb668,
-            0x3e08ba7d3bff3bbc,
-            0x1c1612fc50dc8de0,
+            0x77240d4066e42ac5,
+            0x4a728fcb77b150ee,
+            0xe8faacb3479a973a,
+            0xc0aa2122aa7cb689,
+            0x3f4af36699fe6d74,
+            0xc26943f93dc9eab6,
+            0x23affd628747cbae,
         ]),
     },
     // Fp2(v^3)**(((p^4) - 1) / 3)
@@ -510,31 +530,29 @@ pub const FROBENIUS_COEFF_FP6_C1: [Fp2; 6] = [
             0x0130e0000d7f28e4,
             0x2400000000002400,
         ]),
-
         c1: Fp::ZERO,
     },
     // Fp2(v^3)**(((p^5) - 1) / 3)
     Fp2 {
-        // 0x1e11e906b994badeb3a144b077e428508b37fc44ff5d740afb413cc1c491e8534cefb6d3e0ae5462903abf6ffd81fbc66f815d5883c1faf7
+        // 0x165546173814a19ca18f781044054309e943b9ef683a6385efd7e9aad64bdffa485e5c5efd860546672498a76502061cffb95e58053c3e68
         c0: Fp::from_raw([
-            0x6f815d5883c1faf7,
-            0x903abf6ffd81fbc6,
-            0x4cefb6d3e0ae5462,
-            0xfb413cc1c491e853,
-            0x8b37fc44ff5d740a,
-            0xb3a144b077e42850,
-            0x1e11e906b994bade,
+            0xffb95e58053c3e68,
+            0x672498a76502061c,
+            0x485e5c5efd860546,
+            0xefd7e9aad64bdffa,
+            0xe943b9ef683a6385,
+            0xa18f781044054309,
+            0x165546173814a19c,
         ]),
-
-        // 0x154d8356281dad4ccb0db1057a1b1a7e114938b70241da37799bd9acfb4bd1d20b84b9d6cd9287624e8daf91e89635fe0f3133bc0a57c249
+        // 0x3b90ea573df08a167cc8f43ee2cdb9cfd983ff6bfc6212c262d1e46df2790d7815a816a9169606ee71f263db492378ea168edc22072221b
         c1: Fp::from_raw([
-            0x0f3133bc0a57c249,
-            0x4e8daf91e89635fe,
-            0x0b84b9d6cd928762,
-            0x799bd9acfb4bd1d2,
-            0x114938b70241da37,
-            0xcb0db1057a1b1a7e,
-            0x154d8356281dad4c,
+            0xa168edc22072221b,
+            0xe71f263db492378e,
+            0x815a816a9169606e,
+            0x262d1e46df2790d7,
+            0xfd983ff6bfc6212c,
+            0x67cc8f43ee2cdb9c,
+            0x03b90ea573df08a1,
         ]),
     },
 ];
@@ -544,26 +562,25 @@ pub const FROBENIUS_COEFF_FP6_C2: [Fp2; 6] = [
     Fp2::ONE,
     // Fp2(v^3)**(((2p^1) - 2) / 3)
     Fp2 {
-        // 0x1d51c23fcb1f9dae6458b6193a3766305bedb614a7feb8ec89f2de54da4204fe6832f879b2d457a239174d60a6247988fc8442b768993461
+        // 0x93733692ce3cdcfc34610bac6bd22c4dc590efb038c82998c9549048e7b424cc00e17ffb4a61950d0ec132a7b38f09db0a818e422737f7c
         c0: Fp::from_raw([
-            0xfc8442b768993461,
-            0x39174d60a6247988,
-            0x6832f879b2d457a2,
-            0x89f2de54da4204fe,
-            0x5bedb614a7feb8ec,
-            0x6458b6193a376630,
-            0x1d51c23fcb1f9dae,
+            0xb0a818e422737f7c,
+            0xd0ec132a7b38f09d,
+            0xc00e17ffb4a61950,
+            0x8c9549048e7b424c,
+            0xdc590efb038c8299,
+            0xc34610bac6bd22c4,
+            0x093733692ce3cdcf,
         ]),
-
-        // 0x1500a70695886e6cab571195c7d6000acb2b830a12825c2b4c494d816a5f107ce3393a7f8808224892191b8bc5a401e57acbf5e1ff7aa60d
+        // 0x12cb19daadc92882ba3593aa6f3e6bf426f29bd46039e3036f61d0bd35f39ebecdac3209d9df546061c90b4940d9031c240ce398421dc7dc
         c1: Fp::from_raw([
-            0x7acbf5e1ff7aa60d,
-            0x92191b8bc5a401e5,
-            0xe3393a7f88082248,
-            0x4c494d816a5f107c,
-            0xcb2b830a12825c2b,
-            0xab571195c7d6000a,
-            0x1500a70695886e6c,
+            0x240ce398421dc7dc,
+            0x61c90b4940d9031c,
+            0xcdac3209d9df5460,
+            0x6f61d0bd35f39ebe,
+            0x26f29bd46039e303,
+            0xba3593aa6f3e6bf4,
+            0x12cb19daadc92882,
         ]),
     },
     // Fp2(v^3)**(((2p^2) - 2) / 3)
@@ -582,25 +599,25 @@ pub const FROBENIUS_COEFF_FP6_C2: [Fp2; 6] = [
     },
     // Fp2(v^3)**(((2p^3) - 2) / 3)
     Fp2 {
-        // 0x120be5e275b7740b992ac11ed87340811340a18ffdae8c5a75a401e1859b4c46081d3ffa689cca53b3084b8347191c1df788b62181838924
+        // 0x85cc83a7eeba2ef5f7dd2f9f1405312b2ce0cbc85b8561e1657aaf1e85b82299aa5ace8b26b78d88f57e1c7a87f75556885980d6c8d2186
         c0: Fp::from_raw([
-            0xf788b62181838924,
-            0xb3084b8347191c1d,
-            0x081d3ffa689cca53,
-            0x75a401e1859b4c46,
-            0x1340a18ffdae8c5a,
-            0x992ac11ed8734081,
-            0x120be5e275b7740b,
+            0x6885980d6c8d2186,
+            0x8f57e1c7a87f7555,
+            0x9aa5ace8b26b78d8,
+            0x1657aaf1e85b8229,
+            0xb2ce0cbc85b8561e,
+            0x5f7dd2f9f1405312,
+            0x085cc83a7eeba2ef,
         ]),
-        //0xf64268ae9d89108841b2e2044b239b513e060979a5412ff8a3b20a3c8faec3a4b83661cd06f3f91e511eb36374fe08bf6cc480f091b565
+        // 0xda3357ee4e6a9836af75e8ec0dbd23e7abc03d404620899ee0ea8b684b9400d58d5ebe487e523680bbe8a0dd9ea1d312bca2a953ab51c9b
         c1: Fp::from_raw([
-            0xbf6cc480f091b565,
-            0x1e511eb36374fe08,
-            0xa4b83661cd06f3f9,
-            0xf8a3b20a3c8faec3,
-            0x513e060979a5412f,
-            0x8841b2e2044b239b,
-            0x00f64268ae9d8910,
+            0x2bca2a953ab51c9b,
+            0x0bbe8a0dd9ea1d31,
+            0x58d5ebe487e52368,
+            0xee0ea8b684b9400d,
+            0x7abc03d404620899,
+            0x6af75e8ec0dbd23e,
+            0x0da3357ee4e6a983,
         ]),
     },
     // Fp2(v^3)**(((2p^4) - 2) / 3)
@@ -619,29 +636,26 @@ pub const FROBENIUS_COEFF_FP6_C2: [Fp2; 6] = [
     },
     // Fp2(v^3)**(((2p^5) - 2) / 3)
     Fp2 {
-        //0x18a257ddbf29364604de48c808543b17e0d93d4942c5079788e85483553787b358ff138903eaddb7593038a212cfdce44bf300cd15e3427d
+        // 0x126c045c5430b340de6cfc4b5581fb0d18dcaebf6af44db7a152a66663b3a80589f3e116289c6dad4263f3d0dc4e535286d24be170ff5eff
         c0: Fp::from_raw([
-            0x4bf300cd15e3427d,
-            0x593038a212cfdce4,
-            0x58ff138903eaddb7,
-            0x88e85483553787b3,
-            0xe0d93d4942c50797,
-            0x04de48c808543b17,
-            0x18a257ddbf293646,
+            0x86d24be170ff5eff,
+            0x4263f3d0dc4e5352,
+            0x89f3e116289c6dad,
+            0xa152a66663b3a805,
+            0x18dcaebf6af44db7,
+            0xde6cfc4b5581fb0d,
+            0x126c045c5430b340,
         ]),
-
-        c1: Fp::from_raw(
-            // 0xe091690bbda2c82cd981b88415e4d3e8b9a416368118913ff529ad1339bad3b5cb6351d3a9ee994f23dae83d6edb95765c742700ff3a48f
-            [
-                0x65c742700ff3a48f,
-                0xf23dae83d6edb957,
-                0x5cb6351d3a9ee994,
-                0xff529ad1339bad3b,
-                0x8b9a416368118913,
-                0xcd981b88415e4d3e,
-                0x0e091690bbda2c82,
-            ],
-        ),
+        // 0x391b0a66d5051f9dc03edc6dd6532b206552ace8f9d3ad1e6cf20e91fdd8dafbe2588102de9880e3520536be54398f85028eea5832d1b8a
+        c1: Fp::from_raw([
+            0x5028eea5832d1b8a,
+            0x3520536be54398f8,
+            0xbe2588102de9880e,
+            0xe6cf20e91fdd8daf,
+            0x06552ace8f9d3ad1,
+            0xdc03edc6dd6532b2,
+            0x0391b0a66d5051f9,
+        ]),
     },
 ];
 
