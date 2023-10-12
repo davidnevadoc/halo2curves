@@ -20,7 +20,7 @@ use crate::{
     new_curve_impl,
 };
 
-const PLUTO_GENERATOR_X: Fp = Fp::from_raw([
+const G1_GENERATOR_X: Fp = Fp::from_raw([
     0x9ffffcd2ffffffff,
     0xa2a7e8c30006b945,
     0xe4a7a5fe8fadffd6,
@@ -29,7 +29,7 @@ const PLUTO_GENERATOR_X: Fp = Fp::from_raw([
     0x0130e0000d7f70e4,
     0x2400000000002400,
 ]);
-const PLUTO_GENERATOR_Y: Fp = Fp::from_raw([
+const G1_GENERATOR_Y: Fp = Fp::from_raw([
     0x0000000000000007,
     0x0000000000000000,
     0x0000000000000000,
@@ -62,7 +62,7 @@ const ERIS_GENERATOR_Y: Fq = Fq::from_raw([
 
 const ERIS_B: Fq = Fq::from_raw([0x39, 0, 0, 0, 0, 0, 0]);
 
-const TRITON_GENERATOR_X: Fp2 = Fp2 {
+const G2_GENERATOR_X: Fp2 = Fp2 {
     // 0x13576c81faf3a13fd815d0e9bd54b845ee935948b84498b27ca972bfb93722e223c9e276a4ebe7559cfc86dd865f07d64f2b5fe6556f9066
     c0: Fp::from_raw([
         0x4f2b5fe6556f9066,
@@ -85,7 +85,7 @@ const TRITON_GENERATOR_X: Fp2 = Fp2 {
         0x142164cb875db046,
     ]),
 };
-const TRITON_GENERATOR_Y: Fp2 = Fp2 {
+const G2_GENERATOR_Y: Fp2 = Fp2 {
     //0x2239f7408ead478c58e88d4df1e7418c42fdbb92e64ba85aa4dc17d7dace3f32eb471c004db774bfe78574aca67b3898cd1b78ad106ab9fe
     c0: Fp::from_raw([
         0xcd1b78ad106ab9fe,
@@ -115,8 +115,8 @@ const TRITON_B: Fp2 = Fp2 {
     c1: Fp::ONE,
 };
 
-impl group::cofactor::CofactorGroup for Pluto {
-    type Subgroup = Pluto;
+impl group::cofactor::CofactorGroup for G1 {
+    type Subgroup = G1;
 
     fn clear_cofactor(&self) -> Self {
         *self
@@ -133,12 +133,12 @@ impl group::cofactor::CofactorGroup for Pluto {
 
 new_curve_impl!(
     (pub),
-    Pluto,
-    PlutoAffine,
+    G1,
+    G1Affine,
     false,
     Fp,
     Fq,
-    (PLUTO_GENERATOR_X,PLUTO_GENERATOR_Y),
+    (G1_GENERATOR_X,G1_GENERATOR_Y),
     PLUTO_B,
     "pluto",
 );
@@ -171,8 +171,8 @@ new_curve_impl!(
     "eris",
 );
 
-impl CofactorGroup for Triton {
-    type Subgroup = Triton;
+impl CofactorGroup for G2 {
+    type Subgroup = G2;
 
     fn clear_cofactor(&self) -> Self {
         // cofactor = 2*p - q
@@ -185,14 +185,14 @@ impl CofactorGroup for Triton {
         ];
 
         // self * TRITON_COFACTOR
-        let mut acc = Triton::identity();
+        let mut acc = G2::identity();
         for bit in e
             .iter()
             .flat_map(|byte| (0..8).rev().map(move |i| Choice::from((byte >> i) & 1u8)))
             .skip(1)
         {
             acc = acc.double();
-            acc = Triton::conditional_select(&acc, &(acc + self), bit);
+            acc = G2::conditional_select(&acc, &(acc + self), bit);
         }
         acc
     }
@@ -210,14 +210,14 @@ impl CofactorGroup for Triton {
             0xe8, 0xc3, 0x00, 0x06, 0xb9, 0x45, 0x9f, 0xff, 0xfc, 0xd3, 0x00, 0x00, 0x00, 0x01,
         ];
         // self * GROUP_ORDER;
-        let mut acc = Triton::identity();
+        let mut acc = G2::identity();
         for bit in e
             .iter()
             .flat_map(|byte| (0..8).rev().map(move |i| Choice::from((byte >> i) & 1u8)))
             .skip(1)
         {
             acc = acc.double();
-            acc = Triton::conditional_select(&acc, &(acc + self), bit);
+            acc = G2::conditional_select(&acc, &(acc + self), bit);
         }
         acc.is_identity()
     }
@@ -225,19 +225,19 @@ impl CofactorGroup for Triton {
 
 new_curve_impl!(
     (pub),
-    Triton,
-    TritonAffine,
+    G2,
+    G2Affine,
     false,
     Fp2,
     Fq,
-    (TRITON_GENERATOR_X,TRITON_GENERATOR_Y),
+    (G2_GENERATOR_X,G2_GENERATOR_Y),
     TRITON_B,
     "triton",
 );
 
 #[test]
 fn test_curve_pluto() {
-    crate::tests::curve::curve_tests::<Pluto>();
+    crate::tests::curve::curve_tests::<G1>();
 }
 #[test]
 fn test_curve_eris() {
@@ -245,14 +245,14 @@ fn test_curve_eris() {
 }
 #[test]
 fn test_curve_triton() {
-    crate::tests::curve::curve_tests::<Triton>();
+    crate::tests::curve::curve_tests::<G2>();
 }
 
 #[test]
 fn test_serialization() {
-    crate::tests::curve::random_serialization_test::<Pluto>();
+    crate::tests::curve::random_serialization_test::<G1>();
     crate::tests::curve::random_serialization_test::<Eris>();
-    crate::tests::curve::random_serialization_test::<Triton>();
+    crate::tests::curve::random_serialization_test::<G2>();
     #[cfg(feature = "derive_serde")]
     crate::tests::curve::random_serde_test::<Pluto>();
     #[cfg(feature = "derive_serde")]
@@ -266,9 +266,9 @@ fn test_endo_consistency() {
     let g = Eris::generator();
     assert_eq!(g * Fp::ZETA, g.endo());
 
-    let g = Pluto::generator();
+    let g = G1::generator();
     assert_eq!(g * Fq::ZETA, g.endo());
 
-    let g = Triton::generator();
+    let g = G2::generator();
     assert_eq!(g * Fq::ZETA, g.endo());
 }
