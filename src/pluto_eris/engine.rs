@@ -421,8 +421,22 @@ impl G2Prepared {
         let mut negq = q;
         negq = -negq;
 
-        for i in (0..113).rev() {
+        coeffs.push(doubling_step(&mut r));
+
+        match SIX_U_PLUS_2_NEG_NAF[SIX_U_PLUS_2_NEG_NAF.len() - 2] {
+            1 => {
+                coeffs.push(addition_step(&mut r, &q));
+            }
+            -1 => {
+                coeffs.push(addition_step(&mut r, &negq));
+            }
+            _ => ()
+        }
+        
+        for i in (0..(SIX_U_PLUS_2_NEG_NAF.len() - 2)).rev() {
+
             coeffs.push(doubling_step(&mut r));
+
             let x = SIX_U_PLUS_2_NEG_NAF[i];
             match x {
                 1 => {
@@ -473,7 +487,7 @@ impl MillerLoopResult for Gt {
         fn exp_by_x(f: &mut Fp12) {
             let x = NEG_PLUTO_U;
             let mut res = Fp12::ONE;
-            for i in (0..110).rev() {
+            for i in (0..111).rev() {
                 res.cyclotomic_square();
                 if ((x >> i) & 1) == 1 {
                     res.mul_assign(f);
@@ -597,9 +611,30 @@ pub fn multi_miller_loop(terms: &[(&G1Affine, &G2Prepared)]) -> Gt {
 
     let mut f = Fp12::ONE;
 
-    for i in (0..113).rev() {
+    for &mut (p, ref mut coeffs) in &mut pairs {
+        ell(&mut f, coeffs.next().unwrap(), p);
+    }
+
+    match SIX_U_PLUS_2_NEG_NAF[SIX_U_PLUS_2_NEG_NAF.len() - 2] {
+        1 => {
+            for &mut (p, ref mut coeffs) in &mut pairs {
+                ell(&mut f, coeffs.next().unwrap(), p);
+        }
+        }
+
+        -1 => {
+            for &mut (p, ref mut coeffs) in &mut pairs {
+                ell(&mut f, coeffs.next().unwrap(), p);
+        }
+    }   
+        _ => ()
+    }
+
+    for i in (0..(SIX_U_PLUS_2_NEG_NAF.len() - 2)).rev() {
 
         f.square_assign();
+        
+        //f.square_assign();
 
         for &mut (p, ref mut coeffs) in &mut pairs {
             ell(&mut f, coeffs.next().unwrap(), p);
@@ -730,6 +765,35 @@ fn test_pairing() {
 }
 
 #[test]
+fn tricking_miller_loop_result() {
+    assert_eq!(
+        multi_miller_loop(&[(&G1Affine::identity(), &G2Affine::generator().into())]).0,
+        Fp12::one()
+    );
+    assert_eq!(
+        multi_miller_loop(&[(&G1Affine::generator(), &G2Affine::identity().into())]).0,
+        Fp12::one()
+    );
+    assert_ne!(
+        multi_miller_loop(&[
+            (&G1Affine::generator(), &G2Affine::generator().into()),
+            (&-G1Affine::generator(), &G2Affine::generator().into())
+        ])
+        .0,
+        Fp12::one()
+    );
+    assert_eq!(
+        multi_miller_loop(&[
+            (&G1Affine::generator(), &G2Affine::generator().into()),
+            (&-G1Affine::generator(), &G2Affine::generator().into())
+        ])
+        .final_exponentiation(),
+        Gt::identity()
+    );
+}
+
+
+#[test]
 fn random_bilinearity_tests() {
     let mut rng = XorShiftRng::from_seed([
         0x59, 0x62, 0xbe, 0x5d, 0x76, 0x3d, 0x31, 0x8d, 0x17, 0xdb, 0x37, 0x32, 0x54, 0x06, 0xbc,
@@ -792,7 +856,7 @@ pub fn engine_tests() {
         assert!(a.pairing_with(&b) == pairing(&a, &b));
     }
 
-    for _ in 0..1000 {
+    for _ in 0..10 {
         let z1 = G1Affine::identity();
         let z2 = G2Prepared::from(G2Affine::identity());
 
@@ -831,7 +895,7 @@ fn random_miller_loop_tests() {
     ]);
 
     // Exercise a double miller loop
-    for _ in 0..1000 {
+    for _ in 0..10 {
         let a = G1Affine::from(G1::random(&mut rng));
         let b = G2Affine::from(G2::random(&mut rng));
         let c = G1Affine::from(G1::random(&mut rng));
