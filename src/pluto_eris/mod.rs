@@ -6,6 +6,6 @@ mod fields;
 mod engine;
 
 pub use curve::*;
+pub use engine::*;
 pub use fields::fp::*;
 pub use fields::fq::*;
-pub use engine::*;
