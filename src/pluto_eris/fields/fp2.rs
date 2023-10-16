@@ -288,12 +288,6 @@ impl Fp2 {
     pub fn mul_by_nonresidue(&mut self) {
         // (x + y * u) * 57/(u + 3)
         self.mul_assign(&super::fp6::V_CUBE)
-
-        // let t0 = self.c0;
-        // let t1 = self.c1;
-
-        // self.c0 = t0.double() + U_SQUARE * t1;
-        // self.c1 = t1.double() + t0;
     }
 
     pub fn invert(&self) -> CtOption<Self> {
@@ -678,11 +672,7 @@ fn test_fp2_mul_nonresidue() {
         0x59, 0x62, 0xbe, 0x5d, 0x76, 0x3d, 0x31, 0x8d, 0x17, 0xdb, 0x37, 0x32, 0x54, 0x06, 0xbc,
         0xe5,
     ]);
-    let nqr = Fp2 {
-        c0: Fp::one() + Fp::one(),
-        c1: Fp::one(),
-    };
-
+    let nqr = super::fp6::V_CUBE;
     for _ in 0..1000 {
         let mut a = Fp2::random(&mut rng);
         let mut b = a;
