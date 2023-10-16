@@ -12,7 +12,10 @@ use core::iter::Sum;
 use core::ops::{Add, Mul, MulAssign, Neg, Sub};
 use rand_core::RngCore;
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq};
+// based on page 107, Algorithm 7.2 https://static1.squarespace.com/static/5fdbb09f31d71c1227082339/t/5ff394720493bd28278889c6/1609798774687/PairingsForBeginners.pdf
 
+// T = 6 * u^2 where u is the parameter of the curve Pluto
+// as in BN256, we use NAF form to accelerate the miller loop 
 pub const T_NAF: [i8; 224] = [
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -24,6 +27,7 @@ pub const T_NAF: [i8; 224] = [
     0, 0, 0, 0, -1, 0, 1,
 ];
 
+// u = -0x4000000000001000008780000000
 pub const NEG_PLUTO_U: u128 = 0x4000000000001000008780000000;
 
 
@@ -414,21 +418,6 @@ impl G2Prepared {
             }
         }
 
-        // let mut q1 = q;
-
-        // q1.x.c1 = q1.x.c1.neg();
-        // q1.x.mul_assign(&FROBENIUS_COEFF_FQ6_C1[1]);
-
-        // q1.y.c1 = q1.y.c1.neg();
-        // q1.y.mul_assign(&XI_TO_Q_MINUS_1_OVER_2);
-
-        // coeffs.push(addition_step(&mut r, &q1));
-
-        // let mut minusq2 = q;
-        // minusq2.x.mul_assign(&FROBENIUS_COEFF_FQ6_C1[2]);
-
-        // coeffs.push(addition_step(&mut r, &minusq2));
-
         G2Prepared {
             coeffs,
             infinity: false,
@@ -444,7 +433,7 @@ impl From<G2Affine> for G2Prepared {
 
 impl MillerLoopResult for Gt {
     type Gt = Self;
-    // pub fn final_exponentiation(r: &Fq12) -> CtOption<Fq12> {
+    
     fn final_exponentiation(&self) -> Gt {
         
         fn exp_by_x(f: &mut Fp12) {
@@ -456,7 +445,7 @@ impl MillerLoopResult for Gt {
                     res.mul_assign(f);
                 }
             }
-            res.conjugate();
+            res.conjugate(); // note that the parameter u is negative
             *f = res;
         }
 
@@ -568,7 +557,7 @@ pub fn multi_miller_loop(terms: &[(&G1Affine, &G2Prepared)]) -> Gt {
         c1.c0.mul_assign(&p.x);
         c1.c1.mul_assign(&p.x);
 
-        // Sparse multiplication in Fq12
+        // Sparse multiplication in Fp12
         f.mul_by_034(&c0, &c1, &coeffs.2);
     }
 
@@ -597,13 +586,6 @@ pub fn multi_miller_loop(terms: &[(&G1Affine, &G2Prepared)]) -> Gt {
         }
     }
 
-    // for &mut (p, ref mut coeffs) in &mut pairs {
-    //     ell(&mut f, coeffs.next().unwrap(), p);
-    // }
-
-    // for &mut (p, ref mut coeffs) in &mut pairs {
-    //     ell(&mut f, coeffs.next().unwrap(), p);
-    // }
 
     for &mut (_p, ref mut coeffs) in &mut pairs {
         assert_eq!(coeffs.next(), None);
@@ -680,7 +662,7 @@ fn test_pairing() {
         0x59, 0x62, 0xbe, 0x5d, 0x76, 0x3d, 0x31, 0x8d, 0x17, 0xdb, 0x37, 0x32, 0x54, 0x06, 0xbc,
         0xe5,
     ]);
-    for _ in 0..10 {
+    for _ in 0..100 {
         let a = Fq::random(&mut rng);
         let b = Fq::random(&mut rng);
 
@@ -711,7 +693,7 @@ fn random_bilinearity_tests() {
         0xe5,
     ]);
 
-    for _ in 0..10 {
+    for _ in 0..100 {
         let mut a = G1::generator();
         let ka = Fq::random(&mut rng);
         a.mul_assign(ka);
