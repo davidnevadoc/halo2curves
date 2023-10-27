@@ -2,16 +2,24 @@
 
 mod arithmetic;
 
+pub mod bls12_381;
 pub mod bn256;
 pub mod pairing;
 pub mod pasta;
+pub mod pluto_eris;
 pub mod secp256k1;
 pub mod serde;
+#[macro_use]
+pub mod legendre;
 
 #[macro_use]
 mod derive;
 pub use arithmetic::CurveAffineExt;
 pub use pasta_curves::arithmetic::{Coordinates, CurveAffine, CurveExt};
+
+#[cfg(test)]
+#[macro_use]
+extern crate std;
 
 // Re-export ff and group to simplify down stream dependencies
 #[cfg(feature = "reexport")]
