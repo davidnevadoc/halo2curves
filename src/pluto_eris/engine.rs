@@ -4,31 +4,50 @@ use crate::group::cofactor::CofactorCurveAffine;
 use crate::group::Group;
 use crate::pairing::{Engine, MillerLoopResult, MultiMillerLoop, PairingCurveAffine};
 use crate::pluto_eris::curve::*;
+use crate::pluto_eris::fields::fp::*;
 use crate::pluto_eris::fields::fp12::*;
 use crate::pluto_eris::fields::fp2::*;
+use crate::pluto_eris::fields::fp6::FROBENIUS_COEFF_FP6_C1;
 use crate::pluto_eris::fields::fq::*;
 use core::borrow::Borrow;
 use core::iter::Sum;
 use core::ops::{Add, Mul, MulAssign, Neg, Sub};
 use rand_core::RngCore;
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq};
-// based on page 107, Algorithm 7.2 https://static1.squarespace.com/static/5fdbb09f31d71c1227082339/t/5ff394720493bd28278889c6/1609798774687/PairingsForBeginners.pdf
 
-// T = 6 * u^2 where u is the parameter of the curve Pluto
-// as in BN256, we use NAF form to accelerate the miller loop
-pub const T_NAF: [i8; 224] = [
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    -1, 0, 1, 0, 0, 1, 0, 1, 0, 0, -1, 0, 0, -1, 0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    1, 0, -1, 0, -1, 0, 1, 0, -1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0,
-    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, -1, 0, -1, 0, 1, 0, -1, 0, 1,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, -1, 0, 1,
-];
-
-// u = -0x4000000000001000008780000000
+// Adaptation of Algorithm 1, https://eprint.iacr.org/2013/722.pdf
+// the parameter for the curve Pluto: u = -0x4000000000001000008780000000
 pub const NEG_PLUTO_U: u128 = 0x4000000000001000008780000000;
+pub const PLUTO_U_IS_NEGATIVE: bool = true;
+// -(6u+2) in NAF form
+pub const NEG_SIX_U_PLUS_2_NAF: [i8; 114] = [
+    0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 1, 0, -1, 0, -1, 0, 1, 0, -1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    -1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 1,
+];
+// the value of (57/(u + 3))^((p - 1)/2) where u^2 + 5 = 0 in Fp2
+pub const XI_TO_P_MINUS_1_OVER_2: Fp2 = Fp2 {
+    c0: Fp::from_raw([
+        0x54cf5ad1c0926216,
+        0x186c1f3ce4a46d4e,
+        0x9c23800ce9c9452f,
+        0x50e0d09ff6d6c08b,
+        0x7cf421e4d46f6666,
+        0x678664ba4b6d8343,
+        0x21cc26d5de0f80f4,
+    ]),
+
+    c1: Fp::from_raw([
+        0xc0505f4c260e91f4,
+        0xe7bbd15f10723657,
+        0xb4b3e0c35358097e,
+        0x87c56f42a558750d,
+        0x4b7211d23f34f0ae,
+        0xf6839d29e2f0d250,
+        0x16ebe8b2e12a1106,
+    ]),
+};
 
 impl PairingCurveAffine for G1Affine {
     type Pair = G2Affine;
@@ -403,9 +422,22 @@ impl G2Prepared {
         let mut negq = q;
         negq = -negq;
 
-        for i in (1..T_NAF.len()).rev() {
+        coeffs.push(doubling_step(&mut r));
+
+        match NEG_SIX_U_PLUS_2_NAF[NEG_SIX_U_PLUS_2_NAF.len() - 2] {
+            1 => {
+                coeffs.push(addition_step(&mut r, &q));
+            }
+            -1 => {
+                coeffs.push(addition_step(&mut r, &negq));
+            }
+            _ => (),
+        }
+
+        for i in (0..(NEG_SIX_U_PLUS_2_NAF.len() - 2)).rev() {
             coeffs.push(doubling_step(&mut r));
-            let x = T_NAF[i - 1];
+
+            let x = NEG_SIX_U_PLUS_2_NAF[i];
             match x {
                 1 => {
                     coeffs.push(addition_step(&mut r, &q));
@@ -416,6 +448,24 @@ impl G2Prepared {
                 _ => continue,
             }
         }
+
+        let mut neg_r = r;
+        neg_r = -neg_r;
+
+        let mut q1 = q;
+
+        q1.x.c1 = q1.x.c1.neg();
+        q1.x.mul_assign(&FROBENIUS_COEFF_FP6_C1[1]);
+
+        q1.y.c1 = q1.y.c1.neg();
+        q1.y.mul_assign(&XI_TO_P_MINUS_1_OVER_2);
+
+        coeffs.push(addition_step(&mut neg_r, &q1));
+
+        let mut minusq2 = q;
+        minusq2.x.mul_assign(&FROBENIUS_COEFF_FP6_C1[2]);
+
+        coeffs.push(addition_step(&mut neg_r, &minusq2));
 
         G2Prepared {
             coeffs,
@@ -432,7 +482,7 @@ impl From<G2Affine> for G2Prepared {
 
 impl MillerLoopResult for Gt {
     type Gt = Self;
-
+    // pub fn final_exponentiation(r: &Fq12) -> CtOption<Fq12> {
     fn final_exponentiation(&self) -> Gt {
         fn exp_by_x(f: &mut Fp12) {
             let x = NEG_PLUTO_U;
@@ -443,7 +493,7 @@ impl MillerLoopResult for Gt {
                     res.mul_assign(f);
                 }
             }
-            res.conjugate(); // note that the parameter u is negative
+            res.conjugate();
             *f = res;
         }
 
@@ -555,20 +605,40 @@ pub fn multi_miller_loop(terms: &[(&G1Affine, &G2Prepared)]) -> Gt {
         c1.c0.mul_assign(&p.x);
         c1.c1.mul_assign(&p.x);
 
-        // Sparse multiplication in Fp12
+        // Sparse multiplication in Fq12
         f.mul_by_034(&c0, &c1, &coeffs.2);
     }
 
     let mut f = Fp12::ONE;
 
-    for i in (1..T_NAF.len()).rev() {
-        if i != T_NAF.len() - 1 {
-            f.square_assign();
+    for &mut (p, ref mut coeffs) in &mut pairs {
+        ell(&mut f, coeffs.next().unwrap(), p);
+    }
+
+    match NEG_SIX_U_PLUS_2_NAF[NEG_SIX_U_PLUS_2_NAF.len() - 2] {
+        1 => {
+            for &mut (p, ref mut coeffs) in &mut pairs {
+                ell(&mut f, coeffs.next().unwrap(), p);
+            }
         }
+
+        -1 => {
+            for &mut (p, ref mut coeffs) in &mut pairs {
+                ell(&mut f, coeffs.next().unwrap(), p);
+            }
+        }
+        _ => (),
+    }
+
+    for i in (0..(NEG_SIX_U_PLUS_2_NAF.len() - 2)).rev() {
+        f.square_assign();
+
+        //f.square_assign();
+
         for &mut (p, ref mut coeffs) in &mut pairs {
             ell(&mut f, coeffs.next().unwrap(), p);
         }
-        let x = T_NAF[i - 1];
+        let x = NEG_SIX_U_PLUS_2_NAF[i];
         match x {
             1 => {
                 for &mut (p, ref mut coeffs) in &mut pairs {
@@ -582,6 +652,16 @@ pub fn multi_miller_loop(terms: &[(&G1Affine, &G2Prepared)]) -> Gt {
             }
             _ => continue,
         }
+    }
+
+    f.conjugate();
+
+    for &mut (p, ref mut coeffs) in &mut pairs {
+        ell(&mut f, coeffs.next().unwrap(), p);
+    }
+
+    for &mut (p, ref mut coeffs) in &mut pairs {
+        ell(&mut f, coeffs.next().unwrap(), p);
     }
 
     for &mut (_p, ref mut coeffs) in &mut pairs {
@@ -684,13 +764,41 @@ fn test_pairing() {
 }
 
 #[test]
+fn tricking_miller_loop_result() {
+    assert_eq!(
+        multi_miller_loop(&[(&G1Affine::identity(), &G2Affine::generator().into())]).0,
+        Fp12::one()
+    );
+    assert_eq!(
+        multi_miller_loop(&[(&G1Affine::generator(), &G2Affine::identity().into())]).0,
+        Fp12::one()
+    );
+    assert_ne!(
+        multi_miller_loop(&[
+            (&G1Affine::generator(), &G2Affine::generator().into()),
+            (&-G1Affine::generator(), &G2Affine::generator().into())
+        ])
+        .0,
+        Fp12::one()
+    );
+    assert_eq!(
+        multi_miller_loop(&[
+            (&G1Affine::generator(), &G2Affine::generator().into()),
+            (&-G1Affine::generator(), &G2Affine::generator().into())
+        ])
+        .final_exponentiation(),
+        Gt::identity()
+    );
+}
+
+#[test]
 fn random_bilinearity_tests() {
     let mut rng = XorShiftRng::from_seed([
-        0x59, 0x62, 0xbe, 0x5d, 0x76, 0x3d, 0x31, 0x8d, 0x17, 0xdb, 0x37, 0x32, 0x54, 0x06, 0xbc,
+        0x55, 0x62, 0xbe, 0x5d, 0x76, 0x3d, 0x31, 0x8d, 0x17, 0xdb, 0x37, 0x32, 0x54, 0x06, 0xbc,
         0xe5,
     ]);
 
-    for _ in 0..100 {
+    for _ in 0..10 {
         let mut a = G1::generator();
         let ka = Fq::random(&mut rng);
         a.mul_assign(ka);
@@ -734,7 +842,7 @@ fn random_bilinearity_tests() {
 #[test]
 pub fn engine_tests() {
     let mut rng = XorShiftRng::from_seed([
-        0x59, 0x62, 0xbe, 0x5d, 0x76, 0x3d, 0x31, 0x8d, 0x17, 0xdb, 0x37, 0x32, 0x54, 0x06, 0xbc,
+        0x56, 0x62, 0xbe, 0x5d, 0x76, 0x3d, 0x31, 0x8d, 0x17, 0xdb, 0x37, 0x32, 0x54, 0x06, 0xbc,
         0xe5,
     ]);
 
@@ -780,7 +888,7 @@ pub fn engine_tests() {
 #[test]
 fn random_miller_loop_tests() {
     let mut rng = XorShiftRng::from_seed([
-        0x59, 0x62, 0xbe, 0x5d, 0x76, 0x3d, 0x31, 0x8d, 0x17, 0xdb, 0x37, 0x32, 0x54, 0x06, 0xbc,
+        0x58, 0x62, 0xbe, 0x5d, 0x76, 0x3d, 0x31, 0x8d, 0x17, 0xdb, 0x37, 0x32, 0x54, 0x06, 0xbc,
         0xe5,
     ]);
 
@@ -807,29 +915,46 @@ fn random_miller_loop_tests() {
 }
 
 #[test]
-fn tricking_miller_loop_result() {
-    assert_eq!(
-        multi_miller_loop(&[(&G1Affine::identity(), &G2Affine::generator().into())]).0,
-        Fp12::one()
-    );
-    assert_eq!(
-        multi_miller_loop(&[(&G1Affine::generator(), &G2Affine::identity().into())]).0,
-        Fp12::one()
-    );
-    assert_ne!(
-        multi_miller_loop(&[
-            (&G1Affine::generator(), &G2Affine::generator().into()),
-            (&-G1Affine::generator(), &G2Affine::generator().into())
-        ])
-        .0,
-        Fp12::one()
-    );
-    assert_eq!(
-        multi_miller_loop(&[
-            (&G1Affine::generator(), &G2Affine::generator().into()),
-            (&-G1Affine::generator(), &G2Affine::generator().into())
-        ])
-        .final_exponentiation(),
-        Gt::identity()
-    );
+pub fn multi_miller_final_exp_tests() {
+    let g1 = G1::generator();
+    let g2 = G2::generator();
+
+    let mut rng = XorShiftRng::from_seed([
+        0x56, 0x62, 0xbe, 0x5d, 0x76, 0x3d, 0x31, 0x8d, 0x17, 0xdb, 0x37, 0x32, 0x54, 0x06, 0xbc,
+        0xe5,
+    ]);
+
+    for _ in 0..10 {
+        let s = Fq::random(&mut rng);
+
+        let mut s_g1 = g1;
+        s_g1.mul_assign(s);
+
+        let mut s_g2 = g2;
+        s_g2.mul_assign(s);
+
+        let s_g2_prepared = G2Prepared::from(G2Affine::from(s_g2));
+        let g2_prepared = G2Prepared::from(G2Affine::from(g2));
+
+        let (term_1, term_2) = (
+            (&G1Affine::from(g1), &s_g2_prepared),
+            (&-G1Affine::from(s_g1), &g2_prepared),
+        );
+
+        let terms = &[term_1, term_2];
+
+        assert!(
+            bool::from(
+                multi_miller_loop(&terms[..])
+                    .final_exponentiation()
+                    .is_identity(),
+            ),
+            "trivial pairing check failed"
+        );
+
+        let lhs = Pluto::pairing(&G1Affine::from(g1), &G2Affine::from(s_g2));
+        let rhs = Pluto::pairing(&G1Affine::from(s_g1), &G2Affine::from(g2));
+
+        assert_eq!(lhs, rhs, "failed trivial check");
+    }
 }

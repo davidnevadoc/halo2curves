@@ -836,3 +836,22 @@ fn random_miller_loop_tests() {
         assert_eq!(abcd, abcd_with_double_loop);
     }
 }
+
+#[test]
+fn benchmark() {
+    // let mut rng = XorShiftRng::from_seed([
+    //     0x59, 0x62, 0xbe, 0x5d, 0x76, 0x3d, 0x31, 0x8d, 0x17, 0xdb, 0x37, 0x32, 0x54, 0x06, 0xbc,
+    //     0xe5,
+    // ]);
+    for _ in 0..100 {
+        // let a = Fq::random(&mut rng);
+        // let b = Fq::random(&mut rng);
+        let g1 = G1::generator();
+        //g1.mul_assign(a);
+
+        let g2 = G2::generator();
+        //g1.mul_assign(b);
+
+        Bn256::pairing(&G1Affine::from(g1), &G2Affine::from(g2));
+    }
+}

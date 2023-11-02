@@ -21,6 +21,10 @@ harness = false
 name = "group"
 harness = false
 
+[[bench]]
+name = "pairing"
+harness = false
+
 [dev-dependencies]
 criterion = { version = "0.3", features = ["html_reports"] }
 rand_xorshift = "0.3"
@@ -40,6 +44,7 @@ num-bigint = "0.4.3"
 num-traits = "0.2"
 paste = "1.0.11"
 serde = { version = "1.0", default-features = false, optional = true }
+pairing = "0.23"
 blake2b_simd = "1"
 
 [features]
