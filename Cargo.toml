@@ -48,7 +48,8 @@ pairing = "0.23"
 blake2b_simd = "1"
 
 [features]
-default = [ "reexport" ]
+default = [ "reexport", "bits" ]
+bits = ["ff/bits"]
 asm = []
 prefetch = []
 print-trace = [ "ark-std/print-trace" ]
