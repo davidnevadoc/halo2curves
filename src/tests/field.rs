@@ -1,33 +1,6 @@
 #[macro_export]
 macro_rules! field_testing_suite {
     ($field: ident, "field_arithmetic") => {
-        macro_rules! random_multiplication_tests {
-            ($f: ident, $rng: expr) => {
-                let _message = format!("multiplication {}", stringify!($f));
-                let start = start_timer!(|| _message);
-                for _ in 0..1000000 {
-                    let a = $f::random(&mut $rng);
-                    let b = $f::random(&mut $rng);
-                    let c = $f::random(&mut $rng);
-
-                    let mut t0 = a; // (a * b) * c
-                    t0.mul_assign(&b);
-                    t0.mul_assign(&c);
-
-                    let mut t1 = a; // (a * c) * b
-                    t1.mul_assign(&c);
-                    t1.mul_assign(&b);
-
-                    let mut t2 = b; // (b * c) * a
-                    t2.mul_assign(&c);
-                    t2.mul_assign(&a);
-
-                    assert_eq!(t0, t1);
-                    assert_eq!(t1, t2);
-                }
-                end_timer!(start);
-            };
-        }
 
         macro_rules! random_addition_tests {
             ($f: ident, $rng: expr) => {
@@ -238,6 +211,29 @@ macro_rules! field_testing_suite {
         use rand_xorshift::XorShiftRng;
         use std::ops::*;
 
+        fn random_multiplication_tests<F: Field, R: RngCore>(mut rng: R) {
+            for _ in 0..1000000 {
+                let a = F::random(&mut rng);
+                let b = F::random(&mut rng);
+                let c = F::random(&mut rng);
+
+                let mut t0 = a; // (a * b) * c
+                t0.mul_assign(&b);
+                t0.mul_assign(&c);
+
+                let mut t1 = a; // (a * c) * b
+                t1.mul_assign(&c);
+                t1.mul_assign(&b);
+
+                let mut t2 = b; // (b * c) * a
+                t2.mul_assign(&c);
+                t2.mul_assign(&a);
+
+                assert_eq!(t0, t1);
+                assert_eq!(t1, t2);
+            }
+        }
+
         #[test]
         fn test_field() {
             let mut rng = XorShiftRng::from_seed([
@@ -246,7 +242,8 @@ macro_rules! field_testing_suite {
             ]);
 
             // normal cases
-            random_multiplication_tests!($field, rng);
+
+            random_multiplication_tests::<$field, _>(&mut rng);
             random_addition_tests!($field, rng);
             random_subtraction_tests!($field, rng);
             random_negation_tests!($field, rng);
