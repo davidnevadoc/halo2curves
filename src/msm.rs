@@ -632,7 +632,10 @@ mod test {
 
     #[cfg(test)]
     fn run_msm_cross<C: CurveAffine>(min_k: usize, max_k: usize) {
+        use rayon::iter::{IntoParallelIterator, ParallelIterator};
+
         let points = (0..1 << max_k)
+            .into_par_iter()
             .map(|_| C::Curve::random(OsRng))
             .collect::<Vec<_>>();
         let mut affine_points = vec![C::identity(); 1 << max_k];
@@ -640,6 +643,7 @@ mod test {
         let points = affine_points;
 
         let scalars = (0..1 << max_k)
+            .into_par_iter()
             .map(|_| C::Scalar::random(OsRng))
             .collect::<Vec<_>>();
 
